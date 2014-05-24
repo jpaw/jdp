@@ -31,7 +31,7 @@ test-output/
 generated/
 
 # Eclipse project files
-.project
-.settings/
-.classpath
+#.project
+#.settings/
+#.classpath
 
