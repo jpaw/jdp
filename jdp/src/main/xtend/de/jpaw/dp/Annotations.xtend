@@ -18,3 +18,4 @@ annotation Named {
 	String value;
 }
 
+annotation Startup {}

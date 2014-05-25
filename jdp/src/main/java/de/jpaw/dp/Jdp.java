@@ -78,6 +78,12 @@ public class Jdp {
 		
 	}
 	
+	static public <T> void bind(T target) {
+		JdpEntry<T> newEntry = new JdpEntry<T>(target, null);
+		Class<T> cls = (Class<T>) target.getClass();
+		register(cls, cls, Scopes.EAGER_SINGLETON, newEntry);
+	}
+	
 	static public <T> void bind(T target, String qualifier) {
 		JdpEntry<T> newEntry = new JdpEntry<T>(target, qualifier);
 		Class<T> cls = (Class<T>) target.getClass();
