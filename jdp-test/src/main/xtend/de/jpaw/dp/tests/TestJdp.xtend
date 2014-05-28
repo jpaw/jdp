@@ -17,7 +17,7 @@ class Shakespeare implements Author {
 		System.out.println("Author Shakespeare has been created")
 	}
 	override doWrite(int number) {
-		System.out.println("Author Shakespeare is writing " + number)
+		println("Author Shakespeare is writing " + number)
 	}
 	
 } 
