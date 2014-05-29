@@ -3,6 +3,14 @@ package de.jpaw.dp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** The JdpEntry stores information about a specific class or instance.
+ * The combination of actualType and qualifier should be unique in the system.
+ * The JdpEntry instances are indexed by the JdpTypeEntry class. 
+ *  
+ * @author Michael Bischoff
+ *
+ * @param <T>
+ */
 final class JdpEntry<T> implements Provider<T> {
     private static final Logger LOG = LoggerFactory.getLogger(JdpEntry.class);
 	public final String qualifier;
@@ -11,17 +19,13 @@ final class JdpEntry<T> implements Provider<T> {
 	public T instance = null;						// if it's a singleton: the unique instance (not null once it has been called the first time)
 	
 	
-	private String autodetectQualifier() {
-		Named anno = actualType.getAnnotation(Named.class);
-		return anno == null ? null : anno.value();
-	}
-	// create a new entry from a provided instance - this is a singleton 
+	/** create a new entry from a provided instance without a qualifier - this is a singleton. */ 
 	JdpEntry(T providedInstance) {
-		this((Class<T> )providedInstance.getClass(), Scopes.EAGER_SINGLETON);
+		this(providedInstance, null);
 		instance = providedInstance;
 	}
 	
-	// create a new entry from a provided instance with qualifier - this is a singleton 
+	/** create a new entry from a provided instance with a qualifier - this is a singleton. */ 
 	JdpEntry(T providedInstance, String qualifier) {
 		this.myScope = Scopes.EAGER_SINGLETON;
 		this.actualType = (Class<T> )providedInstance.getClass();
@@ -29,10 +33,12 @@ final class JdpEntry<T> implements Provider<T> {
 		instance = providedInstance;
 	}
 	
+	/** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */ 
 	public JdpEntry(Class<T> actualType, Scopes myScope) {
 		this.myScope = myScope;
 		this.actualType = actualType;
-		this.qualifier = autodetectQualifier();
+		Named anno = actualType.getAnnotation(Named.class);
+		this.qualifier = (anno == null ? null : anno.value());
 	}
 	
 	public T get() {

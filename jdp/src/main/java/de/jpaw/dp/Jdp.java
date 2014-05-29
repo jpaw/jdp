@@ -1,8 +1,13 @@
 package de.jpaw.dp;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.reflections.Reflections;
@@ -78,19 +83,21 @@ public class Jdp {
 		
 	}
 	
+	/** Bind a singleton class instance to its specific class type only, using no qualifier. */
 	static public <T> void bind(T target) {
 		JdpEntry<T> newEntry = new JdpEntry<T>(target, null);
 		Class<T> cls = (Class<T>) target.getClass();
-		register(cls, cls, Scopes.EAGER_SINGLETON, newEntry);
+		register(cls, cls, newEntry);
 	}
 	
+	/** Bind a singleton class instance to its specific class type only, using an explicit qualifier. */
 	static public <T> void bind(T target, String qualifier) {
 		JdpEntry<T> newEntry = new JdpEntry<T>(target, qualifier);
 		Class<T> cls = (Class<T>) target.getClass();
-		register(cls, cls, Scopes.EAGER_SINGLETON, newEntry);
+		register(cls, cls, newEntry);
 	}
 	
-	private static <I,T> void register(Class<T> cls, Class<I> forWhat, Scopes scope, JdpEntry<T> entry) {
+	private static <I,T> void register(Class<T> cls, Class<I> forWhat, JdpEntry<T> entry) {
 		synchronized (typeIndex) {
 			JdpTypeEntry<T> e = typeIndex.get(forWhat);
 			if (e == null) {
@@ -101,12 +108,13 @@ public class Jdp {
 		}
 	}
 	
-	/** Registers a class to itself and to all of its implemented interfaces. */
+	/** Registers a class to itself and to all of its implemented interfaces.
+	 * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
 	private static <T> void register(Class<T> cls, Scopes scope) {
 		JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
-		register(cls, cls, scope, newEntry);
+		register(cls, cls, newEntry);
 		for (Class <?> i : cls.getInterfaces()) {
-			register(cls, i, scope, newEntry);
+			register(cls, i, newEntry);
 		}
 	}
 	
@@ -127,5 +135,31 @@ public class Jdp {
 		
 		Set<Class<?>> dependents = reflections.getTypesAnnotatedWith(Dependent.class);
 		LOG.info("Found {} dependents", dependents.size());
+		
+		Set<Class<?>> startups = reflections.getTypesAnnotatedWith(Startup.class);
+		if (startups.size() > 0) {
+			Map<Integer, Class<?>> hashedStartups = new HashMap<Integer, Class<?>>(startups.size());
+			for (Class<?> cls : startups) {
+				// Startup anno = cls.getDeclaredAnnotation(Startup.class);  // Java 1.8 only
+				Startup anno = cls.getAnnotation(Startup.class);  // not working
+				Integer sortValue = anno.value();
+				Class<?> oldVal = hashedStartups.put(sortValue, cls);
+				if (oldVal != null) {
+					throw new RuntimeException(oldVal.getCanonicalName() + " and " + cls.getCanonicalName()
+							+ " have been specified with the same @Startup sort order " + sortValue);
+				}
+			}
+			// sort the stuff....
+			SortedMap<Integer, Class<?>> sortedStartups = new TreeMap<Integer, Class<?>>(hashedStartups);
+			// run the methods...
+			for (Class<?> cls : sortedStartups.values()) {
+				try {
+					Method startupMethod = cls.getMethod("onStartup");
+					startupMethod.invoke(cls);
+				} catch (Exception e) {
+					throw new RuntimeException("Failed to find or execute onStartup method in " + cls.getCanonicalName(), e);
+				}
+			}
+		}
 	}
 }
