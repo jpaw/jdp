@@ -57,7 +57,7 @@ public class Jdp {
 		return getProvider(type, null);
 	}
 	static public <T> Provider<T> getProvider(Class<T> type, String qualifier) {
-		JdpTypeEntry te = typeIndex.get(type);
+		JdpTypeEntry<T> te = typeIndex.get(type);
 		return te == null ? null : te.getProvider(qualifier);
 	}
 	
@@ -67,8 +67,14 @@ public class Jdp {
 	}
 	
 	/** Get all valid matches. The primary match is returned as the first list element. */
+	static public <T> List<T> getAll(Class<T> type) {
+		return getAll(type, null);
+	}
+	
+	/** Get all valid matches. The primary match is returned as the first list element. */
 	static public <T> List<T> getAll(Class<T> type, String qualifier) {
-		return null;
+		JdpTypeEntry<T> te = typeIndex.get(type);
+		return te == null ? null : te.getAll(qualifier);
 	}
 	
 	/** Bind target to the binding as primary, possibly clearing all other bindings. */ 

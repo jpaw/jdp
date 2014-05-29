@@ -45,4 +45,14 @@ final class JdpTypeEntry<T> {
 		List<JdpEntry<T>> l = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
 		return l != null && l.size() > 0 ? l.get(0) : null;
 	}
+	
+	public List<T> getAll(String qualifier) {
+		List<JdpEntry<T>> baseList = qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier);
+		if (baseList == null)
+			return null;
+		List<T> elementList = new ArrayList<T>(baseList.size());
+		for (JdpEntry<T> e : baseList)
+			elementList.add(e.get());
+		return elementList;
+	}
 }

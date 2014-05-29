@@ -28,6 +28,8 @@ interface Provider<T> {
 	def T get();
 }
 
+/** Can accompany @Inject, to return a list of types, instead of a single instance. */
+annotation Any {}
 
 // qualifiers
 /** The Default qualifier defines that the annotated class is choosen before all other implementations. */

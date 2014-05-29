@@ -4,6 +4,7 @@ import org.eclipse.xtend.lib.macro.AbstractFieldProcessor
 import org.eclipse.xtend.lib.macro.Active
 import org.eclipse.xtend.lib.macro.TransformationContext
 import org.eclipse.xtend.lib.macro.declaration.MutableFieldDeclaration
+import java.util.List
 
 @Active(typeof(InjectProcessor))
     annotation Inject {
@@ -17,7 +18,20 @@ class InjectProcessor extends AbstractFieldProcessor {
     	val jdpClass = Jdp.newTypeReference
     	
     	val qualifier = fld.findAnnotation(namedAnno)?.getValue("value") as String
-    	val qualifierText = if (qualifier != null) ''', "«qualifier»"''' 
+    	val qualifierText = if (qualifier !== null) ''', "«qualifier»"''' 
+		val anyText = if (fld.findAnnotation(Any.newTypeReference.type) !== null) "All"
+		
+		val theType = 
+		if (anyText !== null) {
+			if (fld.type.type.qualifiedName != List.canonicalName) {
+				fld.addError('''field must be of type List when using @Any, found «fld.type.type.qualifiedName»''')
+				return
+			}
+			fld.type.actualTypeArguments.get(0)
+		} else {
+			fld.type
+		}
+		
     	fld.docComment = '''
     		type args are «fld.type.actualTypeArguments.map[simpleName].join(':')» !
     		simple name is «fld.simpleName», type simple name is «fld.type.simpleName»
@@ -25,7 +39,7 @@ class InjectProcessor extends AbstractFieldProcessor {
     	fld.initializer = if (fld.type.type == provider)
     		[ '''«toJavaCode(jdpClass)».getProvider(«toJavaCode(fld.type.actualTypeArguments.get(0))».class«qualifierText»)''']
     	else
-    		[ '''«toJavaCode(jdpClass)».get(«toJavaCode(fld.type)».class«qualifierText»)''']
+    		[ '''«toJavaCode(jdpClass)».get«anyText»(«toJavaCode(theType)».class«qualifierText»)''']
     	// fld.final = true  // currently issues an error as the initializer is not seen
 	}
 }
