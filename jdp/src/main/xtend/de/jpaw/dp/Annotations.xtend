@@ -17,7 +17,9 @@ annotation Singleton {
 annotation Dependent {
 } // javax.enterprise.context 
 
-// annotation PerThread {}  / not yet supported
+annotation PerThread {
+}
+
 // annotation CustomScoped...
 /** A provider is a class which returns the correct instance of a type every time the get() methos is invoked.
  * In the current implementation, the built-in providers for Singleton and Dependent are dependent scoped. 
@@ -28,6 +30,10 @@ interface Provider<T> {
 
 /** Can accompany @Inject, to return a list of types, instead of a single instance. */
 annotation Any {
+}
+interface CustomScope<T> extends Provider<T> {
+	def void set(T instance);
+	def void close();
 }
 
 // qualifiers

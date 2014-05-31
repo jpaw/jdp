@@ -17,7 +17,24 @@ final public class JdpEntry<T> implements Provider<T> {
     public final Scopes myScope;
     public final Class<T> actualType; // the requested type (interface for example)
     private T instance = null; // if it's a singleton: the unique instance (not null once it has been called the first time)
-
+    private final Provider<T> customScope; 
+    
+    private static class DelegateProvider<T> implements Provider<T> {
+        private final Class<T> cls;
+        DelegateProvider(Class<T> cls) {
+            this.cls = cls;
+        }
+        @Override
+        public T get() {
+            try {
+                return cls.newInstance();
+            } catch (Exception e) {
+                LOG.error("Cannot instantiate class {}", cls.getCanonicalName());
+                return null;
+            }
+        }
+        
+    }
     /** create a new entry from a provided instance without a qualifier - this is a singleton. */
     JdpEntry(T providedInstance) {
         this(providedInstance, null);
@@ -29,7 +46,8 @@ final public class JdpEntry<T> implements Provider<T> {
         this.myScope = Scopes.EAGER_SINGLETON;
         this.actualType = (Class<T>) providedInstance.getClass();
         this.qualifier = qualifier;
-        instance = providedInstance;
+        this.instance = providedInstance;
+        this.customScope = null;
     }
 
     /** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */
@@ -38,6 +56,16 @@ final public class JdpEntry<T> implements Provider<T> {
         this.actualType = actualType;
         Named anno = actualType.getAnnotation(Named.class);
         this.qualifier = (anno == null ? null : anno.value());
+        this.customScope = myScope == Scopes.PER_THREAD ? new ThreadScopeWithDelegate(new DelegateProvider(actualType)) : null;
+    }
+
+    /** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */
+    public JdpEntry(Class<T> actualType, Provider<T> customProvider) {
+        this.myScope = Scopes.CUSTOM;
+        this.actualType = actualType;
+        Named anno = actualType.getAnnotation(Named.class);
+        this.qualifier = (anno == null ? null : anno.value());
+        this.customScope = customProvider;
     }
 
     public T get() {
@@ -56,6 +84,9 @@ final public class JdpEntry<T> implements Provider<T> {
             case DEPENDENT:
                 // always return a new instance
                 return actualType.newInstance();
+            case PER_THREAD:
+            case CUSTOM:
+                return customScope.get();
             }
         } catch (Exception e) {
             LOG.error("Exception retrieving instance of {} with qualifier {}: {} ", actualType.getCanonicalName(), qualifier, e);

@@ -1,5 +1,6 @@
 package de.jpaw.dp;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -187,23 +188,37 @@ public class Jdp {
         }
     }
 
+    /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
+     * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
+    private static <T> void registerCustomProvider(Class<T> cls, Provider<T> provider) {
+        JdpEntry<T> newEntry = new JdpEntry<T>(cls, provider);
+        registerClassAndAllInterfaces(cls, newEntry);
+        Class<?> parent = cls.getSuperclass();
+        while (parent != null && parent != Object.class) {
+            registerClassAndAllInterfaces(parent, newEntry);
+            parent = cls.getSuperclass();
+        }
+    }
+
+    static private void initsub(Reflections reflections, Class<? extends Annotation> annotationClass, Scopes scope) {
+        Set<Class<?>> instances = reflections.getTypesAnnotatedWith(annotationClass);
+        LOG.info("Found {} {}", instances.size(), annotationClass.getSimpleName());
+
+        // bind them (and maybe load them eagerly)
+        for (Class<?> s : instances) {
+            register(s, scope);
+        }
+        
+    }
+    
     /** Scans the classpath for all (no)DI relevant annotations. */
     static public void init(String prefix) {
         LOG.info("JDP (a no DI framework) scanner running for package prefix {}", prefix);
 
         Reflections reflections = new Reflections(prefix);
-
-        Set<Class<?>> singletons = reflections.getTypesAnnotatedWith(Singleton.class);
-        LOG.info("Found {} singletons", singletons.size());
-
-        // bind them (and maybe load them eagerly)
-        for (Class<?> s : singletons) {
-            Scopes scope = Scopes.LAZY_SINGLETON;
-            register(s, scope);
-        }
-
-        Set<Class<?>> dependents = reflections.getTypesAnnotatedWith(Dependent.class);
-        LOG.info("Found {} dependents", dependents.size());
+        initsub(reflections, Singleton.class, Scopes.LAZY_SINGLETON);
+        initsub(reflections, Dependent.class, Scopes.DEPENDENT);
+        initsub(reflections, PerThread.class, Scopes.PER_THREAD);
 
         Set<Class<?>> startups = reflections.getTypesAnnotatedWith(Startup.class);
         if (startups.size() > 0) {
