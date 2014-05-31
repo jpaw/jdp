@@ -112,6 +112,17 @@ public class Jdp {
         return te == null ? 0 : te.runForAll(qualifier, lambda);
     }
 
+    /** perform something on all types */
+    static public <T> int forAllEntries(Class<T> baseClass, JdpExecutor<JdpEntry<T>> lambda) {
+        return forAllEntries(baseClass, null, lambda);
+    }
+    
+    /** perform something on all types */
+    static public <T> int forAllEntries(Class<?> baseClass, String qualifier, JdpExecutor<JdpEntry<T>> lambda) {
+        JdpTypeEntry<T> te = typeIndex.get(baseClass);
+        return te == null ? 0 : te.runForAllEntries(qualifier, lambda);
+    }
+
     /** Get the scope of the bound class by class name, without instantiating an instance.
      *   
      */
@@ -137,17 +148,17 @@ public class Jdp {
     static public <T> void bind(T target) {
         JdpEntry<T> newEntry = new JdpEntry<T>(target, null);
         Class<T> cls = (Class<T>) target.getClass();
-        register(cls, cls, newEntry);
+        register(cls, newEntry);
     }
 
     /** Bind a singleton class instance to its specific class type only, using an explicit qualifier. */
     static public <T> void bind(T target, String qualifier) {
         JdpEntry<T> newEntry = new JdpEntry<T>(target, qualifier);
         Class<T> cls = (Class<T>) target.getClass();
-        register(cls, cls, newEntry);
+        register(cls, newEntry);
     }
 
-    private static <I, T> void register(Class<T> cls, Class<I> forWhat, JdpEntry<T> entry) {
+    private static <I, T> void register(Class<I> forWhat, JdpEntry<T> entry) {
         synchronized (typeIndex) {
             JdpTypeEntry<T> e = typeIndex.get(forWhat);
             if (e == null) {
@@ -158,13 +169,21 @@ public class Jdp {
         }
     }
 
-    /** Registers a class to itself and to all of its implemented interfaces.
+    private static void registerClassAndAllInterfaces(Class<?> cls, JdpEntry<?> newEntry) {
+        register(cls, newEntry);
+        for (Class<?> i : cls.getInterfaces()) {
+            registerClassAndAllInterfaces(i, newEntry);
+        }
+    }
+    /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
      * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
     private static <T> void register(Class<T> cls, Scopes scope) {
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
-        register(cls, cls, newEntry);
-        for (Class<?> i : cls.getInterfaces()) {
-            register(cls, i, newEntry);
+        registerClassAndAllInterfaces(cls, newEntry);
+        Class<?> parent = cls.getSuperclass();
+        while (parent != null && parent != Object.class) {
+            registerClassAndAllInterfaces(parent, newEntry);
+            parent = cls.getSuperclass();
         }
     }
 

@@ -11,12 +11,12 @@ import org.slf4j.LoggerFactory;
  *
  * @param <T>
  */
-final class JdpEntry<T> implements Provider<T> {
+final public class JdpEntry<T> implements Provider<T> {
     private static final Logger LOG = LoggerFactory.getLogger(JdpEntry.class);
     public final String qualifier;
     public final Scopes myScope;
     public final Class<T> actualType; // the requested type (interface for example)
-    public T instance = null; // if it's a singleton: the unique instance (not null once it has been called the first time)
+    private T instance = null; // if it's a singleton: the unique instance (not null once it has been called the first time)
 
     /** create a new entry from a provided instance without a qualifier - this is a singleton. */
     JdpEntry(T providedInstance) {
