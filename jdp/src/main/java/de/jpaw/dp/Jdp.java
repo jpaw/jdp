@@ -190,7 +190,7 @@ public class Jdp {
 
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
      * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
-    private static <T> void registerCustomProvider(Class<T> cls, Provider<T> provider) {
+    public static <T> void registerWithCustomProvider(Class<T> cls, Provider<T> provider) {
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, provider);
         registerClassAndAllInterfaces(cls, newEntry);
         Class<?> parent = cls.getSuperclass();
