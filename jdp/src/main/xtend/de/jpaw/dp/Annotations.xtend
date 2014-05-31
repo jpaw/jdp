@@ -6,21 +6,19 @@ import java.lang.annotation.Target
 import java.lang.annotation.ElementType
 
 // scopes
-
 /** The Singleton scope defines that there is a single instance of this class constructed per JVM.
  * The instance is constructed when it is needed the first time.
  */
-annotation Singleton {}
+annotation Singleton {
+}
 
 /** The Dependent scope defines that there is a new instance of this class constructed every time the getter is invoked.
  */
-annotation Dependent {}   // javax.enterprise.context 
+annotation Dependent {
+} // javax.enterprise.context 
 
 // annotation PerThread {}  / not yet supported
-
 // annotation CustomScoped...
-
-
 /** A provider is a class which returns the correct instance of a type every time the get() methos is invoked.
  * In the current implementation, the built-in providers for Singleton and Dependent are dependent scoped. 
  */
@@ -29,17 +27,21 @@ interface Provider<T> {
 }
 
 /** Can accompany @Inject, to return a list of types, instead of a single instance. */
-annotation Any {}
+annotation Any {
+}
 
 // qualifiers
 /** The Default qualifier defines that the annotated class is choosen before all other implementations. */
-annotation Default {}
+annotation Default {
+}
 
 /** The Alternative qualifier defines that the annotated class is not selected for injection, unless explicitly bound. */
-annotation Alternative {}
+annotation Alternative {
+}
 
 /** The Specializes qualifier defines that the annotated class has precedence over all classes it inherits. */
-annotation Specializes {}
+annotation Specializes {
+}
 
 annotation Named {
 	String value;

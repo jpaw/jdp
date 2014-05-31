@@ -6,9 +6,7 @@ import org.eclipse.xtend.lib.macro.TransformationContext
 import org.eclipse.xtend.lib.macro.declaration.MutableFieldDeclaration
 import java.util.List
 
-@Active(typeof(InjectProcessor))
-    annotation Inject {
-}
+@Active(InjectProcessor) annotation Inject {}
 
 class InjectProcessor extends AbstractFieldProcessor {
 
