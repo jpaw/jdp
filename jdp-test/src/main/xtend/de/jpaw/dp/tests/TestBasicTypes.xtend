@@ -16,7 +16,7 @@ class MyDiTest {
 }
 
 
-class Main {
+class BasicMain {
 	def static void main(String [] args) {
 		Jdp.init("de.jpaw.dp.tests");
 		Jdp.bind("Hello, world", null)

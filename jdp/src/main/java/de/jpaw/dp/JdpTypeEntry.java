@@ -65,6 +65,18 @@ final class JdpTypeEntry<T> {
         return null;
     }
     
+    public int runForAll(String qualifier, JdpExecutor<T> lambda) {
+        List<JdpEntry<T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
+        int ctr = 0;
+        if (baseList != null) {
+            for (JdpEntry<T> e : baseList) {
+                lambda.apply(e.get());
+                ++ctr;
+            }
+        }
+        return ctr;
+    }
+    
     public JdpEntry<T> getProvider(String qualifier) {
         List<JdpEntry<T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         return baseList != null && baseList.size() > 0 ? baseList.get(0) : null;

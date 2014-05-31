@@ -100,6 +100,17 @@ public class Jdp {
     static public <T> T getInstanceForClassname(Class<T> baseClass, String name) {
         return getInstanceForClassname(baseClass, name, null);
     }
+    
+    /** perform something on all types */
+    static public <T> int forAll(Class<T> baseClass, JdpExecutor<T> lambda) {
+        return forAll(baseClass, null, lambda);
+    }
+    
+    /** perform something on all types */
+    static public <T> int forAll(Class<?> baseClass, String qualifier, JdpExecutor<T> lambda) {
+        JdpTypeEntry<T> te = typeIndex.get(baseClass);
+        return te == null ? 0 : te.runForAll(qualifier, lambda);
+    }
 
     /** Get the scope of the bound class by class name, without instantiating an instance.
      *   

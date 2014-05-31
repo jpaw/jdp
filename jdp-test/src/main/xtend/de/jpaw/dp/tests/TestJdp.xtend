@@ -64,7 +64,7 @@ class Test2 {
 	 
 }
 
-class Main {
+class MainTestMain {
 	def static void main(String [] args) {
 		Jdp.init("de.jpaw.dp.tests");
 		new Test2 => [
