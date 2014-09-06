@@ -15,13 +15,13 @@
         <guava.version>18.0</guava.version>             <!-- http://code.google.com/p/guava-libraries/ 14.0.1 UPTODATE 2013-06-09, 
             18.0 UPTODATE 2014-08-25 -->
         <xtend.version>2.7.0</xtend.version>
-        <reflections.version>0.9.9-RC2</reflections.version>
+        <reflections.version>0.9.9-SNAPSHOT</reflections.version>
         <jodatime.version>2.4</jodatime.version>        <!-- UPTODATE 2014-07-27 -->
         <testng.version>5.12.1</testng.version>         <!-- 5.14.9 or 6.7 use waaay more dependencies -->
         <junit.version>4.11</junit.version>
         
         <!--  benchmarking -->
-        <jmh.version>0.9.8</jmh.version>                <!-- http://openjdk.java.net/projects/code-tools/jmh/ UPTODATE 2014-08-29 -->
+        <jmh.version>1.0.1</jmh.version>                <!-- http://openjdk.java.net/projects/code-tools/jmh/ UPTODATE 2014-08-29 -->
     </properties>
 
     <licenses>
