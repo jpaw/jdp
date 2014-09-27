@@ -9,7 +9,7 @@
         <relativePath>../jdp-base/pom.xml</relativePath>
     </parent>
 
-	<artifactId>jdp</artifactId>
+	<artifactId>jdp-core</artifactId>
     
 	<dependencies>
 		<dependency>
