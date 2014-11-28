@@ -3,6 +3,7 @@ package de.jpaw.dp;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -170,34 +171,46 @@ public class Jdp {
         }
     }
 
-    private static void registerClassAndAllInterfaces(Class<?> cls, JdpEntry<?> newEntry) {
-        register(cls, newEntry);
-        for (Class<?> i : cls.getInterfaces()) {
-            registerClassAndAllInterfaces(i, newEntry);
+    private static void registerClassAndAllInterfaces(Class<?> cls, JdpEntry<?> newEntry, Set<Class<?>> classesDone) {
+        if (!classesDone.contains(cls)) {
+            LOG.debug("    >>> registering also {}", cls.getCanonicalName());
+            classesDone.add(cls);
+            // register and descend recursion
+            register(cls, newEntry);
+            for (Class<?> i : cls.getInterfaces()) {
+                registerClassAndAllInterfaces(i, newEntry, classesDone);
+            }
+//            LOG.info("    <<< registered  {}", cls.getCanonicalName());
         }
     }
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
      * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
-    private static <T> void register(Class<T> cls, Scopes scope) {
+    private static <T> void registerInternal(Class<T> cls, Scopes scope) {
+        LOG.debug(">>> register called for class {}", cls.getCanonicalName());
+        Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
-        registerClassAndAllInterfaces(cls, newEntry);
+        registerClassAndAllInterfaces(cls, newEntry, classesDone);
         Class<?> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
-            registerClassAndAllInterfaces(parent, newEntry);
-            parent = cls.getSuperclass();
+            registerClassAndAllInterfaces(parent, newEntry, classesDone);
+            parent = parent.getSuperclass();
         }
+//        LOG.info("<<< register done for class {}", cls.getCanonicalName());
     }
 
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
      * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
     public static <T> void registerWithCustomProvider(Class<T> cls, Provider<T> provider) {
+        LOG.debug(">>> register CUSTOM called for class {}", cls.getCanonicalName());
+        Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, provider);
-        registerClassAndAllInterfaces(cls, newEntry);
+        registerClassAndAllInterfaces(cls, newEntry, classesDone);
         Class<?> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
-            registerClassAndAllInterfaces(parent, newEntry);
-            parent = cls.getSuperclass();
+            registerClassAndAllInterfaces(parent, newEntry, classesDone);
+            parent = parent.getSuperclass();
         }
+//        LOG.info("<<< register CUSTOM done for class {}", cls.getCanonicalName());
     }
 
     static private void initsub(Reflections reflections, Class<? extends Annotation> annotationClass, Scopes scope) {
@@ -206,7 +219,7 @@ public class Jdp {
 
         // bind them (and maybe load them eagerly)
         for (Class<?> s : instances) {
-            register(s, scope);
+            registerInternal(s, scope);
         }
         
     }
