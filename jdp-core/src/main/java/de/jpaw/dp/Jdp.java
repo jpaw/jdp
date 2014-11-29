@@ -54,7 +54,22 @@ public class Jdp {
         return (JdpTypeEntry<X>) typeIndex.get(type);
     }
     
+    public static String dump(Class<?> type) {
+        JdpTypeEntry<?> te = getType(type);
+        if (te == null)
+            return "No entry for type " + type.getSimpleName();
+        else
+            return "Registered entries for type "  + type.getSimpleName() + " are\n" + te.dump();
+    }
     
+    public static String dump() {
+        StringBuilder b = new StringBuilder(2000);
+        b.append("Full Jdp type dump:\n");
+        for (Map.Entry<Class<?>, JdpTypeEntry<?>> e : typeIndex.entrySet()) {
+            b.append("Registered entries for type "  + e.getKey().getSimpleName() + " are\n" + e.getValue().dump());
+        }
+        return b.toString();
+    }
     
     /** returns an object of the requested type. Exception: if the type is an interface, an implementation of it is returned. */
     @Deprecated

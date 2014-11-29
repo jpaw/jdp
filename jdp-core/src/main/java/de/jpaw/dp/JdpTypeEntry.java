@@ -44,6 +44,28 @@ final class JdpTypeEntry<T> {
             }
         }
     }
+    
+    private static <T> void join(StringBuilder b, List<JdpEntry<? extends T>> types) {
+        for (int i = 0; i < types.size(); ++i) {
+            if (i > 0)
+                b.append(", ");
+            b.append(types.get(i).actualType.getSimpleName());
+        }
+        b.append('\n');
+    }
+    String dump() {
+        StringBuilder b = new StringBuilder(1000);
+        b.append("unnamed entries: ");
+        join(b, unqualifiedEntries);
+        for (Map.Entry<String, List<JdpEntry<? extends T>>> e : qualifiedEntries.entrySet()) {
+            b.append(e.getKey());
+            b.append(':');
+            b.append(' ');
+            join(b, e.getValue());
+            
+        }
+        return b.toString();
+    }
 
     Scopes getScopeForClassname(String classname, String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
