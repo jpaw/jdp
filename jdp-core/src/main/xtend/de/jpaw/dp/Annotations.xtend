@@ -56,7 +56,6 @@ annotation Specializes {
 }
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
 annotation Named {
 	String value;
 }
