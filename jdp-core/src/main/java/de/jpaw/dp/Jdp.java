@@ -170,17 +170,30 @@ public class Jdp {
         return te == null ? null : te.getInstanceForClassname(classname, qualifier);
     }
 
-    /** Bind target to the binding as primary, possibly clearing all other bindings. */
+    /** Bind target to the binding as primary, possibly clearing all other bindings. No recursions for interfaces are done,
+     * as a specific type is specified. */
     static public <T> void bindInstanceTo(T target, String qualifier, boolean clearOthers) {
         bindInstanceTo(target, (Class<T>)target.getClass(), qualifier, clearOthers);
     }
 
     /** Bind target to the binding as primary, possibly clearing all other bindings.
+     * This uses the EAGER_SINGLETON type, as the instance does already exist. 
      * fluent xtend use:
      * Mega k = new Mega();
      * k.bindInstanceTo("Mega", null, true);   */
     static public <T> void bindInstanceTo(T target, Class<T> type, String qualifier, boolean clearOthers) {
-
+        JdpEntry<T> newEntry = new JdpEntry<T>(target, qualifier);
+        synchronized (typeIndex) {
+            JdpTypeEntry<? super T> e = getType(type);
+            if (e == null) {
+                typeIndex.put(type, new JdpTypeEntry<T>(newEntry));
+            } else {
+                if (clearOthers)
+                    e.clear();
+                e.addEntry(newEntry);
+            }
+        }
+        
     }
 
     /** Bind a singleton class instance to its specific class type only, using no qualifier. */

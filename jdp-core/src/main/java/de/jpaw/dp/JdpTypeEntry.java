@@ -20,15 +20,17 @@ final class JdpTypeEntry<T> {
         return l;
     }
 
-    public JdpTypeEntry(JdpEntry<T> initial) {
-        if (initial.qualifier == null)
-            unqualifiedEntries.add(initial);
-        else {
-            qualifiedEntries.put(initial.qualifier, newListWithInitialEntry(initial));
-        }
+    JdpTypeEntry(JdpEntry<T> initial) {
+        addEntry(initial);
     }
-
-    public void addEntry(JdpEntry<? extends T> additional) {
+    
+    /* remove all entries */
+    final void clear() {
+        unqualifiedEntries.clear();
+        qualifiedEntries.clear();
+    }
+    
+    final void addEntry(JdpEntry<? extends T> additional) {
         if (additional.qualifier == null)
             unqualifiedEntries.add(additional);
         else {
@@ -43,7 +45,7 @@ final class JdpTypeEntry<T> {
         }
     }
 
-    public Scopes getScopeForClassname(String classname, String qualifier) {
+    Scopes getScopeForClassname(String classname, String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         if (baseList != null) {
             for (JdpEntry<? extends T> e : baseList) {
@@ -55,7 +57,7 @@ final class JdpTypeEntry<T> {
         return null;
     }
 
-    public T getInstanceForClassname(String classname, String qualifier) {
+    T getInstanceForClassname(String classname, String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         if (baseList != null) {
             for (JdpEntry<? extends T> e : baseList) {
@@ -67,7 +69,7 @@ final class JdpTypeEntry<T> {
         return null;
     }
     
-    public int runForAll(String qualifier, JdpExecutor<T> lambda) {
+    int runForAll(String qualifier, JdpExecutor<T> lambda) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         int ctr = 0;
         if (baseList != null) {
@@ -79,7 +81,7 @@ final class JdpTypeEntry<T> {
         return ctr;
     }
     
-    public int runForAllEntries(String qualifier, JdpExecutor<JdpEntry<? extends T>> lambda) {
+    int runForAllEntries(String qualifier, JdpExecutor<JdpEntry<? extends T>> lambda) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         int ctr = 0;
         if (baseList != null) {
@@ -91,12 +93,12 @@ final class JdpTypeEntry<T> {
         return ctr;
     }
     
-    public JdpEntry<? extends T> getProvider(String qualifier) {
+    JdpEntry<? extends T> getProvider(String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         return baseList != null && baseList.size() > 0 ? baseList.get(0) : null;
     }
 
-    public List<T> getAll(String qualifier) {
+    List<T> getAll(String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         if (baseList == null)
             return null;
