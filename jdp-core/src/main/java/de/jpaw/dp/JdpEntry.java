@@ -68,6 +68,7 @@ final public class JdpEntry<T> implements Provider<T> {
         this.customScope = customProvider;
     }
 
+    @Override
     public T get() {
         try {
             switch (myScope) {

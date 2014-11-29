@@ -15,6 +15,10 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.jpaw.dp.exceptions.DuplicateStartupSortOrderException;
+import de.jpaw.dp.exceptions.MissingOnStartupMethodException;
+import de.jpaw.dp.exceptions.NoSuitableImplementationException;
+
 /** JDP - jpaw dependency provider. */
 
 // This dependency provider knows the following JSR 330 stuff:
@@ -43,17 +47,50 @@ import org.slf4j.LoggerFactory;
 
 public class Jdp {
     private static final Logger LOG = LoggerFactory.getLogger(Jdp.class);
-    static final Map<Class<?>, JdpTypeEntry> typeIndex = new ConcurrentHashMap<Class<?>, JdpTypeEntry>(1000);
-
-    /** returns an object of the requested type. Exception: if the type is an interface, an implementation of it is returned. */
-    static public <T> T get(Class<T> type) {
-        return get(type, null);
+    static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
+    
+    // typesafe access methods
+    static private <X> JdpTypeEntry<X> getType(Class<X> type) {
+        return (JdpTypeEntry<X>) typeIndex.get(type);
     }
-
+    
+    
+    
+    /** returns an object of the requested type. Exception: if the type is an interface, an implementation of it is returned. */
+    @Deprecated
+    static public <T> T get(Class<T> type) {
+        return getOptional(type, null);
+    }
+    static public <T> T getOptional(Class<T> type) {
+        return getOptional(type, null);
+    }
+    static public <T> T get(Class<T> type, boolean isRequired) {
+        return isRequired ? getRequired(type, null) : getOptional(type, null);
+    }
+    static public <T> T getRequired(Class<T> type) {
+        return getRequired(type, null);
+    }
+    
+    
+    @Deprecated
     static public <T> T get(Class<T> type, String qualifier) {
-        Provider<T> p = getProvider(type, qualifier);
+        return getOptional(type, qualifier);
+    }
+    static public <T> T getOptional(Class<T> type, String qualifier) {
+        Provider<? extends T> p = getProvider(type, qualifier);
         return p == null ? null : p.get();
     }
+    static public <T> T getRequired(Class<T> type, String qualifier) {
+        T result = getOptional(type, qualifier);
+        if (result == null)
+            throw new NoSuitableImplementationException(type, qualifier);
+        return result;
+    }
+    static public <T> T get(Class<T> type, String qualifier, boolean isRequired) {
+        return isRequired ? getRequired(type, qualifier) : getOptional(type, qualifier);
+    }
+    
+    
 
     /** returns an object of the requested type. */
     static public <T> Provider<T> getProvider(Class<T> type) {
@@ -61,8 +98,8 @@ public class Jdp {
     }
 
     static public <T> Provider<T> getProvider(Class<T> type, String qualifier) {
-        JdpTypeEntry<T> te = typeIndex.get(type);
-        return te == null ? null : te.getProvider(qualifier);
+        JdpTypeEntry<T> te = getType(type);
+        return te == null ? null : (Provider<T>)te.getProvider(qualifier);  // Provider<? extends T> is of course also a provider of T 
     }
 
     /** Destructs all objects which have been created in this thread context. */
@@ -77,7 +114,7 @@ public class Jdp {
 
     /** Get all valid matches. The primary match is returned as the first list element. */
     static public <T> List<T> getAll(Class<T> type, String qualifier) {
-        JdpTypeEntry<T> te = typeIndex.get(type);
+        JdpTypeEntry<T> te = getType(type);
         return te == null ? null : te.getAll(qualifier);
     }
 
@@ -109,19 +146,19 @@ public class Jdp {
     }
     
     /** perform something on all types */
-    static public <T> int forAll(Class<?> baseClass, String qualifier, JdpExecutor<T> lambda) {
-        JdpTypeEntry<T> te = typeIndex.get(baseClass);
+    static public <T> int forAll(Class<T> baseClass, String qualifier, JdpExecutor<T> lambda) {
+        JdpTypeEntry<T> te = getType(baseClass);
         return te == null ? 0 : te.runForAll(qualifier, lambda);
     }
 
     /** perform something on all types */
-    static public <T> int forAllEntries(Class<T> baseClass, JdpExecutor<JdpEntry<T>> lambda) {
+    static public <T> int forAllEntries(Class<T> baseClass, JdpExecutor<JdpEntry<? extends T>> lambda) {
         return forAllEntries(baseClass, null, lambda);
     }
     
     /** perform something on all types */
-    static public <T> int forAllEntries(Class<?> baseClass, String qualifier, JdpExecutor<JdpEntry<T>> lambda) {
-        JdpTypeEntry<T> te = typeIndex.get(baseClass);
+    static public <T> int forAllEntries(Class<T> baseClass, String qualifier, JdpExecutor<JdpEntry<? extends T>> lambda) {
+        JdpTypeEntry<T> te = getType(baseClass);
         return te == null ? 0 : te.runForAllEntries(qualifier, lambda);
     }
 
@@ -129,13 +166,13 @@ public class Jdp {
      *   
      */
     static public <T> T getInstanceForClassname(Class<T> baseClass, String classname, String qualifier) {
-        JdpTypeEntry<T> te = typeIndex.get(baseClass);
+        JdpTypeEntry<T> te = getType(baseClass);
         return te == null ? null : te.getInstanceForClassname(classname, qualifier);
     }
 
     /** Bind target to the binding as primary, possibly clearing all other bindings. */
     static public <T> void bindInstanceTo(T target, String qualifier, boolean clearOthers) {
-        bindInstanceTo(target, (Class<T>) target.getClass(), qualifier, clearOthers);
+        bindInstanceTo(target, (Class<T>)target.getClass(), qualifier, clearOthers);
     }
 
     /** Bind target to the binding as primary, possibly clearing all other bindings.
@@ -160,9 +197,9 @@ public class Jdp {
         register(cls, newEntry);
     }
 
-    private static <I, T> void register(Class<I> forWhat, JdpEntry<T> entry) {
+    private static <T> void register(Class<? super T> forWhat, JdpEntry<T> entry) {
         synchronized (typeIndex) {
-            JdpTypeEntry<T> e = typeIndex.get(forWhat);
+            JdpTypeEntry<? super T> e = getType(forWhat);
             if (e == null) {
                 typeIndex.put(forWhat, new JdpTypeEntry<T>(entry));
             } else {
@@ -171,14 +208,14 @@ public class Jdp {
         }
     }
 
-    private static void registerClassAndAllInterfaces(Class<?> cls, JdpEntry<?> newEntry, Set<Class<?>> classesDone) {
+    private static <Q> void registerClassAndAllInterfaces(Class<? super Q> cls, JdpEntry<Q> newEntry, Set<Class<?>> classesDone) {
         if (!classesDone.contains(cls)) {
             LOG.debug("    >>> registering also {}", cls.getCanonicalName());
             classesDone.add(cls);
             // register and descend recursion
             register(cls, newEntry);
-            for (Class<?> i : cls.getInterfaces()) {
-                registerClassAndAllInterfaces(i, newEntry, classesDone);
+            for (Class<?> i : cls.getInterfaces()) {    // JAVABUG: Java is not precise enough here. cls.getInterfaces should consist of entries with Q as uperclass only! 
+                registerClassAndAllInterfaces((Class<? super Q>)i, newEntry, classesDone);
             }
 //            LOG.info("    <<< registered  {}", cls.getCanonicalName());
         }
@@ -190,7 +227,7 @@ public class Jdp {
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
         registerClassAndAllInterfaces(cls, newEntry, classesDone);
-        Class<?> parent = cls.getSuperclass();
+        Class<? super T> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
             registerClassAndAllInterfaces(parent, newEntry, classesDone);
             parent = parent.getSuperclass();
@@ -205,7 +242,7 @@ public class Jdp {
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, provider);
         registerClassAndAllInterfaces(cls, newEntry, classesDone);
-        Class<?> parent = cls.getSuperclass();
+        Class<? super T> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
             registerClassAndAllInterfaces(parent, newEntry, classesDone);
             parent = parent.getSuperclass();
@@ -242,21 +279,22 @@ public class Jdp {
                 Integer sortValue = anno.value();
                 Class<?> oldVal = hashedStartups.put(sortValue, cls);
                 if (oldVal != null) {
-                    throw new RuntimeException(oldVal.getCanonicalName() + " and " + cls.getCanonicalName()
-                            + " have been specified with the same @Startup sort order " + sortValue);
+                    throw new DuplicateStartupSortOrderException(oldVal, cls, sortValue);
                 }
             }
             // sort the stuff....
             SortedMap<Integer, Class<?>> sortedStartups = new TreeMap<Integer, Class<?>>(hashedStartups);
             // run the methods...
             for (Class<?> cls : sortedStartups.values()) {
+                LOG.info("    invoking {}.onStartup()", cls.getCanonicalName());
                 try {
                     Method startupMethod = cls.getMethod("onStartup");
                     startupMethod.invoke(cls);
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to find or execute onStartup method in " + cls.getCanonicalName(), e);
+                    throw new MissingOnStartupMethodException(cls, e);
                 }
             }
         }
+        LOG.info("JDP initialization for {} complete", prefix);
     }
 }
