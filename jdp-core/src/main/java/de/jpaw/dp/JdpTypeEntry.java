@@ -115,7 +115,7 @@ final class JdpTypeEntry<T> {
         return ctr;
     }
     
-    JdpEntry<? extends T> getProvider(String qualifier) {
+    JdpEntry<? extends T> getFirstEntry(String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         return baseList != null && baseList.size() > 0 ? baseList.get(0) : null;
     }

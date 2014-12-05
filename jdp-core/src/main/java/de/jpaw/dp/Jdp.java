@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import de.jpaw.dp.exceptions.DuplicateStartupSortOrderException;
 import de.jpaw.dp.exceptions.MissingOnStartupMethodException;
 import de.jpaw.dp.exceptions.NoSuitableImplementationException;
+import de.jpaw.dp.exceptions.NoSuitableProviderException;
 
 /** JDP - jpaw dependency provider. */
 
@@ -114,7 +115,11 @@ public class Jdp {
 
     static public <T> Provider<T> getProvider(Class<T> type, String qualifier) {
         JdpTypeEntry<T> te = getType(type);
-        return te == null ? null : (Provider<T>)te.getProvider(qualifier);  // Provider<? extends T> is of course also a provider of T 
+        JdpEntry<? extends T> firstEntry = te == null ? null : te.getFirstEntry(qualifier);	// JdpEntry<T> implements Provider<T>
+        if (firstEntry == null) {
+        	throw new NoSuitableProviderException(type, qualifier);
+        }
+        return (Provider<T>)firstEntry; 
     }
 
     /** Destructs all objects which have been created in this thread context. */
