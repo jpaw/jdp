@@ -93,7 +93,7 @@ public class Jdp {
         return getOptional(type, qualifier);
     }
     static public <T> T getOptional(Class<T> type, String qualifier) {
-        Provider<? extends T> p = getProvider(type, qualifier);
+        Provider<? extends T> p = getOptionalProvider(type, qualifier);
         return p == null ? null : p.get();
     }
     static public <T> T getRequired(Class<T> type, String qualifier) {
@@ -113,15 +113,20 @@ public class Jdp {
         return getProvider(type, null);
     }
 
-    static public <T> Provider<T> getProvider(Class<T> type, String qualifier) {
+    static public <T> Provider<T> getOptionalProvider(Class<T> type, String qualifier) {
         JdpTypeEntry<T> te = getType(type);
         JdpEntry<? extends T> firstEntry = te == null ? null : te.getFirstEntry(qualifier);	// JdpEntry<T> implements Provider<T>
-        if (firstEntry == null) {
-        	throw new NoSuitableProviderException(type, qualifier);
-        }
         return (Provider<T>)firstEntry; 
     }
 
+    static public <T> Provider<T> getProvider(Class<T> type, String qualifier) {
+        Provider<T> firstEntry = getOptionalProvider(type, qualifier);
+        if (firstEntry == null) {
+        	throw new NoSuitableProviderException(type, qualifier);
+        }
+        return firstEntry; 
+    }
+    
     /** Destructs all objects which have been created in this thread context. */
     static public void clearThreadContext() {
 
