@@ -29,7 +29,7 @@ class Shakespeare implements Author {
 @Alternative
 class Goethe implements Author {
 	new () {
-		System.out.println("Author Goethe has been created")
+		println("Author Goethe has been created")
 	}
 	override doWrite(int number) {
 		println("Author Goethe is writing " + number)
@@ -71,5 +71,7 @@ class MainTestMain {
 			runIt(8)		// showcase that regular new() is working
 			runOthers
 		]
+		
+		println(Jdp.dump)
 	}
 }

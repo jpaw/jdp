@@ -31,6 +31,12 @@ interface Provider<T> {
 /** Can accompany @Inject, to return a list of types, instead of a single instance. */
 annotation Any {
 }
+
+/** Can accompany @Inject, to indicate that a missing value is acceptable (i.e. the target field is nullable). */
+annotation Optional {
+}
+
+
 interface CustomScope<T> extends Provider<T> {
 	def void set(T instance);
 	def void close();
@@ -49,6 +55,7 @@ annotation Alternative {
 annotation Specializes {
 }
 
+@Retention(RetentionPolicy.RUNTIME)
 annotation Named {
 	String value;
 }

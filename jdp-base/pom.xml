@@ -3,12 +3,13 @@
 
     <parent>
         <groupId>de.jpaw</groupId>
-        <artifactId>jpaw-defs</artifactId>
-        <version>1.0.1</version>
+        <artifactId>jpaw-se-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath/>
     </parent>
 
     <artifactId>jdp-base</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <packaging>pom</packaging>
 
     <description>Common configuration settings for all JDP projects</description>
@@ -19,7 +20,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.9.1</version>
+                    <version>${javadoc.plugin.version}</version>
                     <configuration>
                         <charset>UTF-8</charset>
                     </configuration>
@@ -28,7 +29,7 @@
                     <!-- must delete generated sources as well -->
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>${clean.plugin.version}</version>
                     <configuration>
                         <filesets>
                             <fileset>
@@ -42,7 +43,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>2.2.1</version>
+                    <version>${source.plugin.version}</version>
                     <executions>
                         <execution>
                             <goals>
@@ -54,7 +55,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.14</version>
+                    <version>${surefire.plugin.version}</version>
                     <configuration>
                         <!-- cannot use target/lib because we depend on additional 4rd party libraries (lz4), which are not in this project -->
                         <argLine>-Djava.library.path=${user.home}/lib</argLine>
@@ -93,7 +94,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>${javadoc.plugin.version}</version>
                 <configuration>
                     <charset>UTF-8</charset>
                 </configuration>

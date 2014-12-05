@@ -13,7 +13,7 @@ class MyDiTest {
 	@Inject @Named("remotePort") public Integer port
 	
 	@Inject Provider<Serializable> mySerializer
-}
+} 
 
 
 class BasicMain {

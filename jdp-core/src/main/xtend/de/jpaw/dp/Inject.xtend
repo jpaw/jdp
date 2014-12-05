@@ -15,20 +15,28 @@ class InjectProcessor extends AbstractFieldProcessor {
     	val namedAnno = Named.newTypeReference.type
     	val jdpClass = Jdp.newTypeReference
     	
+    	val isAny = fld.findAnnotation(Any.newTypeReference.type) !== null
+    	val isOptional = fld.findAnnotation(Optional.newTypeReference.type) !== null
+    	
     	val qualifier = fld.findAnnotation(namedAnno)?.getValue("value") as String
     	val qualifierText = if (qualifier !== null) ''', "«qualifier»"''' 
-		val anyText = if (fld.findAnnotation(Any.newTypeReference.type) !== null) "All"
+		val anyText = if (isAny) "All" else if (isOptional) "Optional" else "Required"
 		
+		if (isAny && isOptional) {
+		    fld.addError('''Cannot use @Any and @Optional on the same field''')
+    		return  
+    	}
+		  
 		val theType = 
-		if (anyText !== null) {
-			if (fld.type.type.qualifiedName != List.canonicalName) {
-				fld.addError('''field must be of type List when using @Any, found «fld.type.type.qualifiedName»''')
-				return
-			}
-			fld.type.actualTypeArguments.get(0)
-		} else {
-			fld.type
-		}
+    		if (isAny) {
+	   		    if (fld.type.type.qualifiedName != List.canonicalName) {
+				    fld.addError('''field must be of type List when using @Any, found «fld.type.type.qualifiedName»''')
+				    return
+			     }
+			     fld.type.actualTypeArguments.get(0)
+		    } else {
+			     fld.type
+		    }
 		
     	fld.docComment = '''
     		type args are «fld.type.actualTypeArguments.map[simpleName].join(':')» !
@@ -38,6 +46,6 @@ class InjectProcessor extends AbstractFieldProcessor {
     		[ '''«toJavaCode(jdpClass)».getProvider(«toJavaCode(fld.type.actualTypeArguments.get(0))».class«qualifierText»)''']
     	else
     		[ '''«toJavaCode(jdpClass)».get«anyText»(«toJavaCode(theType)».class«qualifierText»)''']
-    	// fld.final = true  // currently issues an error as the initializer is not seen
+    	fld.final = true  // before xtend 2.7, this had issued an error as the initializer is not seen. Now it's fine!
 	}
 }
