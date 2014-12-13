@@ -15,6 +15,7 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.jpaw.dp.exceptions.ClassRegisteredTwiceException;
 import de.jpaw.dp.exceptions.DuplicateStartupSortOrderException;
 import de.jpaw.dp.exceptions.MissingOnStartupMethodException;
 import de.jpaw.dp.exceptions.NoSuitableImplementationException;
@@ -49,6 +50,7 @@ import de.jpaw.dp.exceptions.NoSuitableProviderException;
 public class Jdp {
     private static final Logger LOG = LoggerFactory.getLogger(Jdp.class);
     static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
+    static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope 
     
     // typesafe access methods
     static private <X> JdpTypeEntry<X> getType(Class<X> type) {
@@ -143,6 +145,17 @@ public class Jdp {
         return te == null ? null : te.getAll(qualifier);
     }
 
+    /** Get all valid matches. The primary match is returned as the first list element. */
+    static public <T> List<Class<? extends T>> getAllClasses(Class<T> type) {
+        return getAllClasses(type, null);
+    }
+
+    /** Get all valid matches. The primary match is returned as the first list element. */
+    static public <T> List<Class<? extends T>> getAllClasses(Class<T> type, String qualifier) {
+        JdpTypeEntry<T> te = getType(type);
+        return te == null ? null : te.getAllClasses(qualifier);
+    }
+
     /** Get the scope of the bound class by class name, without instantiating an instance.
      *   
      */
@@ -195,19 +208,37 @@ public class Jdp {
         return te == null ? null : te.getInstanceForClassname(classname, qualifier);
     }
 
-    /** Bind target to the binding as primary, possibly clearing all other bindings. No recursions for interfaces are done,
-     * as a specific type is specified. */
-    static public <T> void bindInstanceTo(T target, String qualifier, boolean clearOthers) {
-        bindInstanceTo(target, (Class<T>)target.getClass(), qualifier, clearOthers);
+    /** Bind source to its own class as the new goal, with a qualifier. */
+    static public <T> void bindInstanceTo(T source, String qualifier) {
+        bindInstanceTo(source, (Class<T>)source.getClass(), qualifier, true);
+    }
+    /** Bind source to its own class as the new goal for no qualifier.
+     * Difference to bind() is that this one uses the main class only and does no recursion. */
+    static public <T> void bindInstanceTo(T source) {
+        bindInstanceTo(source, (Class<T>)source.getClass(), null, true);
     }
 
-    /** Bind target to the binding as primary, possibly clearing all other bindings.
-     * This uses the EAGER_SINGLETON type, as the instance does already exist. 
-     * fluent xtend use:
-     * Mega k = new Mega();
-     * k.bindInstanceTo("Mega", null, true);   */
-    static public <T> void bindInstanceTo(T target, Class<T> type, String qualifier, boolean clearOthers) {
-        JdpEntry<T> newEntry = new JdpEntry<T>(target, qualifier);
+    /** Bind source to type as if it had the specified qualifier. */
+    static public <T> void bindClassToQualifier(Class<? extends T> source, Class<T> type, String qualifier) {
+    	// the class must have been registered via autodetection without a qualifier before...
+    	JdpEntry<?> entry = allAutodetectedClasses.get(source);
+    	if (entry == null)
+    		throw new NoSuitableImplementationException(source);
+    	bindEntryTo((JdpEntry<T>)entry, type, qualifier, true);
+    }
+    /** Bind source to type as if it had no qualifier.
+     * Useful for selection of a couple of alternatives via config file. */
+    static public <T> void bindClassWithoutQualifier(Class<? extends T> source, Class<T> type) {
+    	// the class must have been registered via autodetection without a qualifier before...
+    	JdpEntry<?> entry = allAutodetectedClasses.get(source);
+    	if (entry == null)
+    		throw new NoSuitableImplementationException(source);
+    	bindEntryTo((JdpEntry<T>)entry, type, null, true);
+    }
+
+
+    /** internal subroutine: register an existing entry for a type. */
+    static private <T> void bindEntryTo(JdpEntry<T> newEntry, Class<T> type, String qualifier, boolean clearOthers) {
         synchronized (typeIndex) {
             JdpTypeEntry<? super T> e = getType(type);
             if (e == null) {
@@ -218,20 +249,38 @@ public class Jdp {
                 e.addEntry(newEntry);
             }
         }
-        
     }
-
+    /** Bind source to the binding as primary, possibly clearing all other bindings.
+     * This uses the EAGER_SINGLETON type, as the instance does already exist. 
+     * fluent xtend use:
+     * Mega k = new Mega();
+     * k.bindInstanceTo("Mega", null, true);   */
+    static private <T> void bindInstanceTo(T source, Class<T> type, String qualifier, boolean clearOthers) {
+        JdpEntry<T> newEntry = new JdpEntry<T>(source, qualifier);
+        bindEntryTo(newEntry, type, qualifier, clearOthers);
+    }
+    // Java, give me default parameters please... 
+    static public <T> void bindInstanceTo(T source, Class<T> type, String qualifier) {
+        JdpEntry<T> newEntry = new JdpEntry<T>(source, qualifier);
+        bindEntryTo(newEntry, type, qualifier, true);
+    }
+    static public <T> void bindInstanceTo(T source, Class<T> type) {
+        JdpEntry<T> newEntry = new JdpEntry<T>(source, null);
+        bindEntryTo(newEntry, type, null, true);
+    }
+    
+    
     /** Bind a singleton class instance to its specific class type only, using no qualifier. */
-    static public <T> void bind(T target) {
-        JdpEntry<T> newEntry = new JdpEntry<T>(target, null);
-        Class<T> cls = (Class<T>) target.getClass();
+    static public <T> void bind(T source) {
+        JdpEntry<T> newEntry = new JdpEntry<T>(source, null);
+        Class<T> cls = (Class<T>) source.getClass();
         register(cls, newEntry);
     }
 
     /** Bind a singleton class instance to its specific class type only, using an explicit qualifier. */
-    static public <T> void bind(T target, String qualifier) {
-        JdpEntry<T> newEntry = new JdpEntry<T>(target, qualifier);
-        Class<T> cls = (Class<T>) target.getClass();
+    static public <T> void bind(T source, String qualifier) {
+        JdpEntry<T> newEntry = new JdpEntry<T>(source, qualifier);
+        Class<T> cls = (Class<T>) source.getClass();
         register(cls, newEntry);
     }
 
@@ -264,6 +313,9 @@ public class Jdp {
         LOG.debug(">>> register called for class {}", cls.getCanonicalName());
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
+        if (allAutodetectedClasses.put(cls, newEntry) != null) {
+        	throw new ClassRegisteredTwiceException(cls);
+        }
         registerClassAndAllInterfaces(cls, newEntry, classesDone);
         Class<? super T> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
@@ -274,7 +326,7 @@ public class Jdp {
     }
 
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
-     * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
+     * The scope passed from the outside, it is used for autodetection of the classes. */
     public static <T> void registerWithCustomProvider(Class<T> cls, Provider<T> provider) {
         LOG.debug(">>> register CUSTOM called for class {}", cls.getCanonicalName());
         Set<Class<?>> classesDone = new HashSet<Class<?>>();

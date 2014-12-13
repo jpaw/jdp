@@ -129,4 +129,14 @@ final class JdpTypeEntry<T> {
             elementList.add(e.get());
         return elementList;
     }
+    
+    List<Class<? extends T>> getAllClasses(String qualifier) {
+        List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
+        if (baseList == null)
+            return null;
+        List<Class<? extends T>> elementList = new ArrayList<Class<? extends T>>(baseList.size());
+        for (JdpEntry<? extends T> e : baseList)
+            elementList.add(e.actualType);
+        return elementList;
+    }
 }
