@@ -412,4 +412,12 @@ public class Jdp {
         }
         LOG.info("JDP initialization for {} complete", prefix);
     }
+    
+    /** Clears all information for a fresh restart. Required in testing environments due to the static data. */
+    static public void reset() {
+        LOG.info("JDP RESET called");
+        typeIndex.clear();
+        allAutodetectedClasses.clear(); 
+        classesOverriddenBySpecialized.clear();
+    }
 }
