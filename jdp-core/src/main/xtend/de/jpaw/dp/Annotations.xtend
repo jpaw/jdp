@@ -73,3 +73,10 @@ annotation Named {
 annotation Startup {
 	int value;
 }
+
+@Retention(RetentionPolicy::RUNTIME)
+@Target(ElementType::TYPE)
+annotation ScopeWithCustomProvider {
+    Class<? extends CustomScope<?>> value;
+}
+

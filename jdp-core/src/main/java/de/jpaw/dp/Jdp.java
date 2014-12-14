@@ -384,6 +384,7 @@ public class Jdp {
         initsub(reflections, Singleton.class, Scopes.LAZY_SINGLETON);
         initsub(reflections, Dependent.class, Scopes.DEPENDENT);
         initsub(reflections, PerThread.class, Scopes.PER_THREAD);
+        initsub(reflections, ScopeWithCustomProvider.class, Scopes.CUSTOM);
 
         Set<Class<?>> startups = reflections.getTypesAnnotatedWith(Startup.class);
         if (startups.size() > 0) {

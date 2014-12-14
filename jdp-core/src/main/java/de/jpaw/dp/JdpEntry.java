@@ -3,6 +3,8 @@ package de.jpaw.dp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.jpaw.dp.exceptions.CannotCreateProviderException;
+
 /** The JdpEntry stores information about a specific class or instance.
  * The combination of actualType and qualifier should be unique in the system.
  * The JdpEntry instances are indexed by the JdpTypeEntry class. 
@@ -57,6 +59,18 @@ final public class JdpEntry<T> implements Provider<T> {
         this.specializes = false;
     }
 
+    
+    private final CustomScope<T> getCustomProvider(Class<T> actualType) {
+		Class<? extends CustomScope<?>> myScopeClass = actualType.getAnnotation(ScopeWithCustomProvider.class).value();
+    	try {
+			return (CustomScope<T>) myScopeClass.newInstance();
+		} catch (InstantiationException e) {
+			throw new CannotCreateProviderException(actualType, myScopeClass, e);
+		} catch (IllegalAccessException e) {
+			throw new CannotCreateProviderException(actualType, myScopeClass, e);
+		}
+    }
+    
     /** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */
     public JdpEntry(Class<T> actualType, Scopes myScope) {
         this.myScope = myScope;
@@ -66,10 +80,12 @@ final public class JdpEntry<T> implements Provider<T> {
         this.isAlternative = actualType.getAnnotation(Alternative.class) != null;
         this.isDefault = actualType.getAnnotation(Default.class) != null;
         this.specializes = actualType.getAnnotation(Specializes.class) != null;
-        this.customScope = myScope == Scopes.PER_THREAD ? new ThreadScopeWithDelegate(new DelegateProvider(actualType)) : null;
+        this.customScope = myScope == Scopes.PER_THREAD
+        		? new ThreadScopeWithDelegate(new DelegateProvider(actualType))
+        		: myScope == Scopes.CUSTOM ? getCustomProvider(actualType) : null;
     }
 
-    /** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */
+	/** create a new entry for a manual assignment. */
     public JdpEntry(Class<T> actualType, Provider<T> customProvider) {
         this.myScope = Scopes.CUSTOM;
         this.actualType = actualType;
