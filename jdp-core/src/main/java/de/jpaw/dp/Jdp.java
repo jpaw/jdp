@@ -20,6 +20,7 @@ import de.jpaw.dp.exceptions.DuplicateStartupSortOrderException;
 import de.jpaw.dp.exceptions.MissingOnStartupMethodException;
 import de.jpaw.dp.exceptions.NoSuitableImplementationException;
 import de.jpaw.dp.exceptions.NoSuitableProviderException;
+import de.jpaw.dp.exceptions.NonuniqueImplementationException;
 
 /** JDP - jpaw dependency provider. */
 
@@ -51,6 +52,7 @@ public class Jdp {
     private static final Logger LOG = LoggerFactory.getLogger(Jdp.class);
     static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
     static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope 
+    static private Map<Class<?>, JdpEntry<?>> classesOverriddenBySpecialized = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used to mark classes which are overridden
     
     // typesafe access methods
     static private <X> JdpTypeEntry<X> getType(Class<X> type) {
@@ -89,14 +91,10 @@ public class Jdp {
         return getRequired(type, null);
     }
     
-    
+    /** Replaced by getOptional(). */
     @Deprecated
     static public <T> T get(Class<T> type, String qualifier) {
         return getOptional(type, qualifier);
-    }
-    static public <T> T getOptional(Class<T> type, String qualifier) {
-        Provider<? extends T> p = getOptionalProvider(type, qualifier);
-        return p == null ? null : p.get();
     }
     static public <T> T getRequired(Class<T> type, String qualifier) {
         T result = getOptional(type, qualifier);
@@ -104,23 +102,20 @@ public class Jdp {
             throw new NoSuitableImplementationException(type, qualifier);
         return result;
     }
+    static public <T> T getOptional(Class<T> type, String qualifier) {
+        Provider<? extends T> p = getOptionalProvider(type, qualifier);
+        return p == null ? null : p.get();
+    }
     static public <T> T get(Class<T> type, String qualifier, boolean isRequired) {
         return isRequired ? getRequired(type, qualifier) : getOptional(type, qualifier);
     }
     
     
 
-    /** returns an object of the requested type. */
+    /** returns a provider for the requested type. */
     static public <T> Provider<T> getProvider(Class<T> type) {
         return getProvider(type, null);
     }
-
-    static public <T> Provider<T> getOptionalProvider(Class<T> type, String qualifier) {
-        JdpTypeEntry<T> te = getType(type);
-        JdpEntry<? extends T> firstEntry = te == null ? null : te.getFirstEntry(qualifier);	// JdpEntry<T> implements Provider<T>
-        return (Provider<T>)firstEntry; 
-    }
-
     static public <T> Provider<T> getProvider(Class<T> type, String qualifier) {
         Provider<T> firstEntry = getOptionalProvider(type, qualifier);
         if (firstEntry == null) {
@@ -128,6 +123,30 @@ public class Jdp {
         }
         return firstEntry; 
     }
+    static public <T> Provider<T> getOptionalProvider(Class<T> type, String qualifier) {
+        JdpTypeEntry<T> te = getType(type);
+        if (te != null) {
+        	List<JdpEntry<? extends T>> entries = te.getEntries(qualifier);
+        	if (entries != null && entries.size() > 0) {
+        		JdpEntry<? extends T> candidate = entries.get(0);		// first shot at an result
+        		if (entries.size() > 1) {
+        			// need to cut down the result set... Filter away all alternatives and ones which have been specialized
+        			int countEligible = 0;
+        			for (JdpEntry<? extends T> e : entries) {
+        				if (!e.isAlternative && classesOverriddenBySpecialized.get(e.actualType) == null) {
+        					++countEligible;
+        					candidate = e;
+        				}
+        			}
+        			if (countEligible > 1)
+        				throw new NonuniqueImplementationException(type, qualifier);
+        		}
+    			return (Provider<T>)candidate;		// valid because JdpEntry<T> implements Provider<T>
+        	}
+        }
+        return null; 
+    }
+
     
     /** Destructs all objects which have been created in this thread context. */
     static public void clearThreadContext() {
@@ -316,9 +335,15 @@ public class Jdp {
         if (allAutodetectedClasses.put(cls, newEntry) != null) {
         	throw new ClassRegisteredTwiceException(cls);
         }
+//        if (classesOverriddenBySpecialized.get(cls) != null) {
+//        	newEntry.setOverriddenBySpecialized();
+//        }
         registerClassAndAllInterfaces(cls, newEntry, classesDone);
         Class<? super T> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
+        	if (newEntry.specializes) {
+        		classesOverriddenBySpecialized.put(parent, newEntry);
+        	}
             registerClassAndAllInterfaces(parent, newEntry, classesDone);
             parent = parent.getSuperclass();
         }

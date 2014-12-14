@@ -21,7 +21,7 @@ final public class JdpEntry<T> implements Provider<T> {
     public final Class<T> actualType; // the requested type (interface for example)
     private T instance = null; // if it's a singleton: the unique instance (not null once it has been called the first time)
     private final Provider<T> customScope; 
-    private boolean overriddenBySpecialized = false;
+//    private boolean overriddenBySpecialized = false;
     
     private static class DelegateProvider<T> implements Provider<T> {
         private final Class<T> cls;
@@ -109,11 +109,11 @@ final public class JdpEntry<T> implements Provider<T> {
         return null;
     }
 
-	public boolean isOverriddenBySpecialized() {
-		return overriddenBySpecialized;
-	}
-
-	public void setOverriddenBySpecialized() {
-		this.overriddenBySpecialized = true;
-	}
+//	public boolean isOverriddenBySpecialized() {
+//		return overriddenBySpecialized;
+//	}
+//
+//	public void setOverriddenBySpecialized() {
+//		this.overriddenBySpecialized = true;
+//	}
 }
