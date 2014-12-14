@@ -13,11 +13,15 @@ import org.slf4j.LoggerFactory;
  */
 final public class JdpEntry<T> implements Provider<T> {
     private static final Logger LOG = LoggerFactory.getLogger(JdpEntry.class);
-    public final String qualifier;
+    public final String qualifier;		// the qualifier - either provided with the constructor or autodetected from @Named annotation
+    public final boolean isAlternative;	// autodetected, if @Alternative annotation is set, the entry won't be used unless explicitly requested by config files or bind requests 
+    public final boolean isDefault;		// autodetected, if the @Default annotation is set, the entry will be choosen amount others with higher priority 
+    public final boolean specializes;	// autodetected, if @Specializes annotation is set, the entry will override any parent class
     public final Scopes myScope;
     public final Class<T> actualType; // the requested type (interface for example)
     private T instance = null; // if it's a singleton: the unique instance (not null once it has been called the first time)
     private final Provider<T> customScope; 
+    private boolean overriddenBySpecialized = false;
     
     private static class DelegateProvider<T> implements Provider<T> {
         private final Class<T> cls;
@@ -48,6 +52,9 @@ final public class JdpEntry<T> implements Provider<T> {
         this.qualifier = qualifier;
         this.instance = providedInstance;
         this.customScope = null;
+        this.isAlternative = false;
+        this.isDefault = false;
+        this.specializes = false;
     }
 
     /** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */
@@ -56,6 +63,9 @@ final public class JdpEntry<T> implements Provider<T> {
         this.actualType = actualType;
         Named anno = actualType.getAnnotation(Named.class);
         this.qualifier = (anno == null ? null : anno.value());
+        this.isAlternative = actualType.getAnnotation(Alternative.class) != null;
+        this.isDefault = actualType.getAnnotation(Default.class) != null;
+        this.specializes = actualType.getAnnotation(Specializes.class) != null;
         this.customScope = myScope == Scopes.PER_THREAD ? new ThreadScopeWithDelegate(new DelegateProvider(actualType)) : null;
     }
 
@@ -65,6 +75,9 @@ final public class JdpEntry<T> implements Provider<T> {
         this.actualType = actualType;
         Named anno = actualType.getAnnotation(Named.class);
         this.qualifier = (anno == null ? null : anno.value());
+        this.isAlternative = actualType.getAnnotation(Alternative.class) != null;
+        this.isDefault = actualType.getAnnotation(Default.class) != null;
+        this.specializes = actualType.getAnnotation(Specializes.class) != null;
         this.customScope = customProvider;
     }
 
@@ -78,7 +91,7 @@ final public class JdpEntry<T> implements Provider<T> {
                 if (instance != null)
                     return instance;
                 else {
-                    // TODO: lock!
+                    // TODO: lock! But then be aware of deadlocks / cycles!
                     instance = actualType.newInstance();
                     return instance;
                 }
@@ -95,4 +108,12 @@ final public class JdpEntry<T> implements Provider<T> {
         }
         return null;
     }
+
+	public boolean isOverriddenBySpecialized() {
+		return overriddenBySpecialized;
+	}
+
+	public void setOverriddenBySpecialized() {
+		this.overriddenBySpecialized = true;
+	}
 }

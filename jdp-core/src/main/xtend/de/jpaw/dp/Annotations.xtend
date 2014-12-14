@@ -11,12 +11,12 @@ import java.lang.annotation.ElementType
  */
 annotation Singleton {
 }
-
 /** The Dependent scope defines that there is a new instance of this class constructed every time the getter is invoked.
  */
 annotation Dependent {
-} // javax.enterprise.context 
-
+} 
+/** The Dependent scope defines that there is a new instance of this class for every thread.
+ */
 annotation PerThread {
 }
 
@@ -43,7 +43,8 @@ interface CustomScope<T> extends Provider<T> {
 }
 
 // qualifiers
-/** The Default qualifier defines that the annotated class is choosen before all other implementations. */
+/** The Default qualifier defines that the annotated class is choosen before all other implementations, i.e. if multiple
+ * bindings exist, the default one will be picked. */
 annotation Default {
 }
 
