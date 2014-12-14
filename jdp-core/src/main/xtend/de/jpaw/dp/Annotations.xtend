@@ -45,14 +45,17 @@ interface CustomScope<T> extends Provider<T> {
 // qualifiers
 /** The Default qualifier defines that the annotated class is choosen before all other implementations, i.e. if multiple
  * bindings exist, the default one will be picked. */
+@Retention(RetentionPolicy.RUNTIME)
 annotation Default {
 }
 
 /** The Alternative qualifier defines that the annotated class is not selected for injection, unless explicitly bound. */
+@Retention(RetentionPolicy.RUNTIME)
 annotation Alternative {
 }
 
 /** The Specializes qualifier defines that the annotated class has precedence over all classes it inherits. */
+@Retention(RetentionPolicy.RUNTIME)
 annotation Specializes {
 }
 
