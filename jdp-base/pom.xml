@@ -94,15 +94,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${javadoc.plugin.version}</version>
-                <configuration>
-                    <charset>UTF-8</charset>
-                </configuration>
             </plugin>
         </plugins>
     </reporting>
 
     <modules>
+        <module>../jdp-bom/pom.xml</module>
         <module>../jdp-core/pom.xml</module>
         <module>../jdp-test/pom.xml</module>
     </modules>

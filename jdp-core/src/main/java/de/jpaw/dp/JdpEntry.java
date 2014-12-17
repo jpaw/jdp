@@ -6,12 +6,17 @@ import org.slf4j.LoggerFactory;
 import de.jpaw.dp.exceptions.CannotCreateProviderException;
 
 /** The JdpEntry stores information about a specific class or instance.
- * The combination of actualType and qualifier should be unique in the system.
- * The JdpEntry instances are indexed by the JdpTypeEntry class. 
+ * 
+ * For every autodetected Class (i,e, class annotated by some scope annotation), there is
+ * exactly one instance of JdpEntry.
+ * The JdpEntry instances are indexed by the JdpTypeEntry class, which list possible assignments.
+ * While a JdpEntry is an (almost) immutable class, the JdpTypeEntry instances can vary over time,
+ * as programmatic bindings are performed. (JdpEntry is almost immutable, as the instance field is
+ * initialized to null and only assigned later, when required, for classes of scope Singleton.)
  *  
  * @author Michael Bischoff
  *
- * @param <T>
+ * @param <T> - the actual class this instance describes.
  */
 final public class JdpEntry<T> implements Provider<T> {
     private static final Logger LOG = LoggerFactory.getLogger(JdpEntry.class);
