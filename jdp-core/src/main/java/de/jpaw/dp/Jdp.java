@@ -122,30 +122,30 @@ public class Jdp {
     static public <T> Provider<T> getProvider(Class<T> type, String qualifier) {
         Provider<T> firstEntry = getOptionalProvider(type, qualifier);
         if (firstEntry == null) {
-        	throw new NoSuitableProviderException(type, qualifier);
+            throw new NoSuitableProviderException(type, qualifier);
         }
         return firstEntry; 
     }
     static public <T> Provider<T> getOptionalProvider(Class<T> type, String qualifier) {
         JdpTypeEntry<T> te = getType(type);
         if (te != null) {
-        	List<JdpEntry<? extends T>> entries = te.getEntries(qualifier);
-        	if (entries != null && entries.size() > 0) {
-        		JdpEntry<? extends T> candidate = entries.get(0);		// first shot at an result
-        		if (entries.size() > 1) {
-        			// need to cut down the result set... Filter away all alternatives and ones which have been specialized
-        			int countEligible = 0;
-        			for (JdpEntry<? extends T> e : entries) {
-        				if (!e.isAlternative && classesOverriddenBySpecialized.get(e.actualType) == null) {
-        					++countEligible;
-        					candidate = e;
-        				}
-        			}
-        			if (countEligible > 1)
-        				throw new NonuniqueImplementationException(type, qualifier);
-        		}
-    			return (Provider<T>)candidate;		// valid because JdpEntry<T> implements Provider<T>
-        	}
+            List<JdpEntry<? extends T>> entries = te.getEntries(qualifier);
+            if (entries != null && entries.size() > 0) {
+                JdpEntry<? extends T> candidate = entries.get(0);       // first shot at an result
+                if (entries.size() > 1) {
+                    // need to cut down the result set... Filter away all alternatives and ones which have been specialized
+                    int countEligible = 0;
+                    for (JdpEntry<? extends T> e : entries) {
+                        if (!e.isAlternative && classesOverriddenBySpecialized.get(e.actualType) == null) {
+                            ++countEligible;
+                            candidate = e;
+                        }
+                    }
+                    if (countEligible > 1)
+                        throw new NonuniqueImplementationException(type, qualifier);
+                }
+                return (Provider<T>)candidate;      // valid because JdpEntry<T> implements Provider<T>
+            }
         }
         return null; 
     }
@@ -242,20 +242,20 @@ public class Jdp {
 
     /** Bind source to type as if it had the specified qualifier. */
     static public <T> void bindClassToQualifier(Class<? extends T> source, Class<T> type, String qualifier) {
-    	// the class must have been registered via autodetection without a qualifier before...
-    	JdpEntry<?> entry = allAutodetectedClasses.get(source);
-    	if (entry == null)
-    		throw new NoSuitableImplementationException(source);
-    	bindEntryTo((JdpEntry<T>)entry, type, qualifier, true);
+        // the class must have been registered via autodetection without a qualifier before...
+        JdpEntry<?> entry = allAutodetectedClasses.get(source);
+        if (entry == null)
+            throw new NoSuitableImplementationException(source);
+        bindEntryTo((JdpEntry<T>)entry, type, qualifier, true);
     }
     /** Bind source to type as if it had no qualifier.
      * Useful for selection of a couple of alternatives via config file. */
     static public <T> void bindClassWithoutQualifier(Class<? extends T> source, Class<T> type) {
-    	// the class must have been registered via autodetection without a qualifier before...
-    	JdpEntry<?> entry = allAutodetectedClasses.get(source);
-    	if (entry == null)
-    		throw new NoSuitableImplementationException(source);
-    	bindEntryTo((JdpEntry<T>)entry, type, null, true);
+        // the class must have been registered via autodetection without a qualifier before...
+        JdpEntry<?> entry = allAutodetectedClasses.get(source);
+        if (entry == null)
+            throw new NoSuitableImplementationException(source);
+        bindEntryTo((JdpEntry<T>)entry, type, null, true);
     }
 
 
@@ -336,17 +336,17 @@ public class Jdp {
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
         if (allAutodetectedClasses.put(cls, newEntry) != null) {
-        	throw new ClassRegisteredTwiceException(cls);
+            throw new ClassRegisteredTwiceException(cls);
         }
 //        if (classesOverriddenBySpecialized.get(cls) != null) {
-//        	newEntry.setOverriddenBySpecialized();
+//          newEntry.setOverriddenBySpecialized();
 //        }
         registerClassAndAllInterfaces(cls, newEntry, classesDone);
         Class<? super T> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
-        	if (newEntry.specializes) {
-        		classesOverriddenBySpecialized.put(parent, newEntry);
-        	}
+            if (newEntry.specializes) {
+                classesOverriddenBySpecialized.put(parent, newEntry);
+            }
             registerClassAndAllInterfaces(parent, newEntry, classesDone);
             parent = parent.getSuperclass();
         }
@@ -407,38 +407,38 @@ public class Jdp {
             SortedMap<Integer, Class<?>> sortedStartups = new TreeMap<Integer, Class<?>>(hashedStartups);
             // run the methods...
             for (Class<?> cls : sortedStartups.values()) {
-            	// determine if we want the static or the dynamic variant
-            	if (StartupOnly.class.isAssignableFrom(cls)) {
-            		// dynamic path
+                // determine if we want the static or the dynamic variant
+                if (StartupOnly.class.isAssignableFrom(cls)) {
+                    // dynamic path
                     LOG.info("    invoking {}.onStartup()", cls.getCanonicalName());
                     StartupOnly bean = null;
                     try {
-						bean = (StartupOnly)cls.newInstance();
-					} catch (Exception e) {
-						// convert the RuntimeException
-                		throw new StartupBeanInstantiationException(cls, e);
-					}
+                        bean = (StartupOnly)cls.newInstance();
+                    } catch (Exception e) {
+                        // convert the RuntimeException
+                        throw new StartupBeanInstantiationException(cls, e);
+                    }
                     // invoke then method
                     bean.onStartup();
                     
                     // Test if we want shutdown as well. In that case, register the bean.
                     if (bean instanceof StartupShutdown)
-                    	lifecycleBeans.add((StartupShutdown) bean);
-            	} else {
-            		// combined reflection code with invoke
-            		LOG.info("    invoking static {}.onStartup()", cls.getCanonicalName());
-            		Method startupMethod = null;
-                	try {
-                		startupMethod = cls.getMethod("onStartup");
-                	} catch (Exception e) {
-                		throw new MissingOnStartupMethodException(cls, e);
-                	}
-                	try {
+                        lifecycleBeans.add((StartupShutdown) bean);
+                } else {
+                    // combined reflection code with invoke
+                    LOG.info("    invoking static {}.onStartup()", cls.getCanonicalName());
+                    Method startupMethod = null;
+                    try {
+                        startupMethod = cls.getMethod("onStartup");
+                    } catch (Exception e) {
+                        throw new MissingOnStartupMethodException(cls, e);
+                    }
+                    try {
                         startupMethod.invoke(cls);
-                	} catch (Exception e) {
-                		throw new StartupMethodExecutionException(cls, e);
-                	}
-            	}
+                    } catch (Exception e) {
+                        throw new StartupMethodExecutionException(cls, e);
+                    }
+                }
             }
         }
         LOG.info("JDP initialization for {} complete", prefix);
@@ -449,16 +449,16 @@ public class Jdp {
         LOG.info("JDP SHUTDOWN called");
         int i = lifecycleBeans.size();
         while (i > 0) {
-        	StartupShutdown bean = lifecycleBeans.get(--i);
+            StartupShutdown bean = lifecycleBeans.get(--i);
             LOG.info("    invoking {}.onShutdown()", bean.getClass().getCanonicalName());
-        	try {
-        		bean.onShutdown();
-        	} catch (Exception e) {
-        		// we want to ensure that system level shutdown code is executed even if some business functions had issues
-        		LOG.error("Shutdown problem: " + e.getMessage(), e);
-        	}
+            try {
+                bean.onShutdown();
+            } catch (Exception e) {
+                // we want to ensure that system level shutdown code is executed even if some business functions had issues
+                LOG.error("Shutdown problem: " + e.getMessage(), e);
+            }
         }
-        lifecycleBeans.clear();			// be nice to duplicate calls of the shutdown method
+        lifecycleBeans.clear();         // be nice to duplicate calls of the shutdown method
         LOG.info("JDP shutdown complete");
     }
     

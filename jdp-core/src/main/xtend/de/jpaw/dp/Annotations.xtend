@@ -25,7 +25,7 @@ annotation PerThread {
  * In the current implementation, the built-in providers for Singleton and Dependent are dependent scoped. 
  */
 interface Provider<T> {
-	def T get();
+    def T get();
 }
 
 /** Can accompany @Inject, to return a list of types, instead of a single instance. */
@@ -38,8 +38,8 @@ annotation Optional {
 
 
 interface CustomScope<T> extends Provider<T> {
-	def void set(T instance);
-	def void close();
+    def void set(T instance);
+    def void close();
 }
 
 // qualifiers
@@ -61,7 +61,7 @@ annotation Specializes {
 
 @Retention(RetentionPolicy.RUNTIME)
 annotation Named {
-	String value;
+    String value;
 }
 
 /** Classes annotated with @Startup will be loaded after all other Jdp initalization code for the specified package prefix.
@@ -71,7 +71,7 @@ annotation Named {
 @Retention(RetentionPolicy::RUNTIME)
 @Target(ElementType::TYPE)
 annotation Startup {
-	int value;
+    int value;
 }
 
 @Retention(RetentionPolicy::RUNTIME)

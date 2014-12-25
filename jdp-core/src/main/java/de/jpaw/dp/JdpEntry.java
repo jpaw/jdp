@@ -20,10 +20,10 @@ import de.jpaw.dp.exceptions.CannotCreateProviderException;
  */
 final public class JdpEntry<T> implements Provider<T> {
     private static final Logger LOG = LoggerFactory.getLogger(JdpEntry.class);
-    public final String qualifier;		// the qualifier - either provided with the constructor or autodetected from @Named annotation
-    public final boolean isAlternative;	// autodetected, if @Alternative annotation is set, the entry won't be used unless explicitly requested by config files or bind requests 
-    public final boolean isDefault;		// autodetected, if the @Default annotation is set, the entry will be choosen amount others with higher priority 
-    public final boolean specializes;	// autodetected, if @Specializes annotation is set, the entry will override any parent class
+    public final String qualifier;      // the qualifier - either provided with the constructor or autodetected from @Named annotation
+    public final boolean isAlternative; // autodetected, if @Alternative annotation is set, the entry won't be used unless explicitly requested by config files or bind requests 
+    public final boolean isDefault;     // autodetected, if the @Default annotation is set, the entry will be choosen amount others with higher priority 
+    public final boolean specializes;   // autodetected, if @Specializes annotation is set, the entry will override any parent class
     public final Scopes myScope;
     public final Class<T> actualType; // the requested type (interface for example)
     private T instance = null; // if it's a singleton: the unique instance (not null once it has been called the first time)
@@ -66,14 +66,14 @@ final public class JdpEntry<T> implements Provider<T> {
 
     
     private final CustomScope<T> getCustomProvider(Class<T> actualType) {
-		Class<? extends CustomScope<?>> myScopeClass = actualType.getAnnotation(ScopeWithCustomProvider.class).value();
-    	try {
-			return (CustomScope<T>) myScopeClass.newInstance();
-		} catch (InstantiationException e) {
-			throw new CannotCreateProviderException(actualType, myScopeClass, e);
-		} catch (IllegalAccessException e) {
-			throw new CannotCreateProviderException(actualType, myScopeClass, e);
-		}
+        Class<? extends CustomScope<?>> myScopeClass = actualType.getAnnotation(ScopeWithCustomProvider.class).value();
+        try {
+            return (CustomScope<T>) myScopeClass.newInstance();
+        } catch (InstantiationException e) {
+            throw new CannotCreateProviderException(actualType, myScopeClass, e);
+        } catch (IllegalAccessException e) {
+            throw new CannotCreateProviderException(actualType, myScopeClass, e);
+        }
     }
     
     /** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */
@@ -86,11 +86,11 @@ final public class JdpEntry<T> implements Provider<T> {
         this.isDefault = actualType.getAnnotation(Default.class) != null;
         this.specializes = actualType.getAnnotation(Specializes.class) != null;
         this.customScope = myScope == Scopes.PER_THREAD
-        		? new ThreadScopeWithDelegate(new DelegateProvider(actualType))
-        		: myScope == Scopes.CUSTOM ? getCustomProvider(actualType) : null;
+                ? new ThreadScopeWithDelegate(new DelegateProvider(actualType))
+                : myScope == Scopes.CUSTOM ? getCustomProvider(actualType) : null;
     }
 
-	/** create a new entry for a manual assignment. */
+    /** create a new entry for a manual assignment. */
     public JdpEntry(Class<T> actualType, Provider<T> customProvider) {
         this.myScope = Scopes.CUSTOM;
         this.actualType = actualType;
@@ -130,11 +130,11 @@ final public class JdpEntry<T> implements Provider<T> {
         return null;
     }
 
-//	public boolean isOverriddenBySpecialized() {
-//		return overriddenBySpecialized;
-//	}
+//  public boolean isOverriddenBySpecialized() {
+//      return overriddenBySpecialized;
+//  }
 //
-//	public void setOverriddenBySpecialized() {
-//		this.overriddenBySpecialized = true;
-//	}
+//  public void setOverriddenBySpecialized() {
+//      this.overriddenBySpecialized = true;
+//  }
 }

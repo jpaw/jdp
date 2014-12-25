@@ -9,6 +9,6 @@ package de.jpaw.dp;
  * be separated from the actual business logic, allowing for clearer stack traces in case of exceptions,
  * and separate exception codes. */
 public interface StartupOnly {
-	/** Code to be executed at startup time. */
-	void onStartup();
+    /** Code to be executed at startup time. */
+    void onStartup();
 }
