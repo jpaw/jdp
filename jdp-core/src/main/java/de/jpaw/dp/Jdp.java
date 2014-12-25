@@ -2,6 +2,7 @@ package de.jpaw.dp;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -21,6 +22,8 @@ import de.jpaw.dp.exceptions.MissingOnStartupMethodException;
 import de.jpaw.dp.exceptions.NoSuitableImplementationException;
 import de.jpaw.dp.exceptions.NoSuitableProviderException;
 import de.jpaw.dp.exceptions.NonuniqueImplementationException;
+import de.jpaw.dp.exceptions.StartupBeanInstantiationException;
+import de.jpaw.dp.exceptions.StartupMethodExecutionException;
 
 /** JDP - jpaw dependency provider. */
 
@@ -376,6 +379,8 @@ public class Jdp {
         
     }
     
+    static private final List<StartupShutdown> lifecycleBeans = new ArrayList<StartupShutdown>(40);
+    
     /** Scans the classpath for all (no)DI relevant annotations. */
     static public void init(String prefix) {
         LOG.info("JDP (a no DI framework) scanner running for package prefix {}", prefix);
@@ -402,21 +407,65 @@ public class Jdp {
             SortedMap<Integer, Class<?>> sortedStartups = new TreeMap<Integer, Class<?>>(hashedStartups);
             // run the methods...
             for (Class<?> cls : sortedStartups.values()) {
-                LOG.info("    invoking {}.onStartup()", cls.getCanonicalName());
-                try {
-                    Method startupMethod = cls.getMethod("onStartup");
-                    startupMethod.invoke(cls);
-                } catch (Exception e) {
-                    throw new MissingOnStartupMethodException(cls, e);
-                }
+            	// determine if we want the static or the dynamic variant
+            	if (StartupOnly.class.isAssignableFrom(cls)) {
+            		// dynamic path
+                    LOG.info("    invoking {}.onStartup()", cls.getCanonicalName());
+                    StartupOnly bean = null;
+                    try {
+						bean = (StartupOnly)cls.newInstance();
+					} catch (Exception e) {
+						// convert the RuntimeException
+                		throw new StartupBeanInstantiationException(cls, e);
+					}
+                    // invoke then method
+                    bean.onStartup();
+                    
+                    // Test if we want shutdown as well. In that case, register the bean.
+                    if (bean instanceof StartupShutdown)
+                    	lifecycleBeans.add((StartupShutdown) bean);
+            	} else {
+            		// combined reflection code with invoke
+            		LOG.info("    invoking static {}.onStartup()", cls.getCanonicalName());
+            		Method startupMethod = null;
+                	try {
+                		startupMethod = cls.getMethod("onStartup");
+                	} catch (Exception e) {
+                		throw new MissingOnStartupMethodException(cls, e);
+                	}
+                	try {
+                        startupMethod.invoke(cls);
+                	} catch (Exception e) {
+                		throw new StartupMethodExecutionException(cls, e);
+                	}
+            	}
             }
         }
         LOG.info("JDP initialization for {} complete", prefix);
     }
     
+    /** Runs all shutdown code. */
+    static public void shutdown() {
+        LOG.info("JDP SHUTDOWN called");
+        int i = lifecycleBeans.size();
+        while (i > 0) {
+        	StartupShutdown bean = lifecycleBeans.get(--i);
+            LOG.info("    invoking {}.onShutdown()", bean.getClass().getCanonicalName());
+        	try {
+        		bean.onShutdown();
+        	} catch (Exception e) {
+        		// we want to ensure that system level shutdown code is executed even if some business functions had issues
+        		LOG.error("Shutdown problem: " + e.getMessage(), e);
+        	}
+        }
+        lifecycleBeans.clear();			// be nice to duplicate calls of the shutdown method
+        LOG.info("JDP shutdown complete");
+    }
+    
     /** Clears all information for a fresh restart. Required in testing environments due to the static data. */
     static public void reset() {
         LOG.info("JDP RESET called");
+        lifecycleBeans.clear();
         typeIndex.clear();
         allAutodetectedClasses.clear(); 
         classesOverriddenBySpecialized.clear();
