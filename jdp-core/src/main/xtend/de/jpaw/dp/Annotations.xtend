@@ -11,12 +11,12 @@ import java.lang.annotation.ElementType
  */
 annotation Singleton {
 }
-
 /** The Dependent scope defines that there is a new instance of this class constructed every time the getter is invoked.
  */
 annotation Dependent {
-} // javax.enterprise.context 
-
+} 
+/** The Dependent scope defines that there is a new instance of this class for every thread.
+ */
 annotation PerThread {
 }
 
@@ -25,7 +25,7 @@ annotation PerThread {
  * In the current implementation, the built-in providers for Singleton and Dependent are dependent scoped. 
  */
 interface Provider<T> {
-	def T get();
+    def T get();
 }
 
 /** Can accompany @Inject, to return a list of types, instead of a single instance. */
@@ -38,26 +38,30 @@ annotation Optional {
 
 
 interface CustomScope<T> extends Provider<T> {
-	def void set(T instance);
-	def void close();
+    def void set(T instance);
+    def void close();
 }
 
 // qualifiers
-/** The Default qualifier defines that the annotated class is choosen before all other implementations. */
+/** The Default qualifier defines that the annotated class is choosen before all other implementations, i.e. if multiple
+ * bindings exist, the default one will be picked. */
+@Retention(RetentionPolicy.RUNTIME)
 annotation Default {
 }
 
 /** The Alternative qualifier defines that the annotated class is not selected for injection, unless explicitly bound. */
+@Retention(RetentionPolicy.RUNTIME)
 annotation Alternative {
 }
 
 /** The Specializes qualifier defines that the annotated class has precedence over all classes it inherits. */
+@Retention(RetentionPolicy.RUNTIME)
 annotation Specializes {
 }
 
 @Retention(RetentionPolicy.RUNTIME)
 annotation Named {
-	String value;
+    String value;
 }
 
 /** Classes annotated with @Startup will be loaded after all other Jdp initalization code for the specified package prefix.
@@ -67,5 +71,12 @@ annotation Named {
 @Retention(RetentionPolicy::RUNTIME)
 @Target(ElementType::TYPE)
 annotation Startup {
-	int value;
+    int value;
 }
+
+@Retention(RetentionPolicy::RUNTIME)
+@Target(ElementType::TYPE)
+annotation ScopeWithCustomProvider {
+    Class<? extends CustomScope<?>> value;
+}
+

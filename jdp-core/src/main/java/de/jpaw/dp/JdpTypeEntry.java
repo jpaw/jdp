@@ -96,7 +96,7 @@ final class JdpTypeEntry<T> {
         int ctr = 0;
         if (baseList != null) {
             for (JdpEntry<? extends T> e : baseList) {
-                lambda.apply(e.get());
+                lambda.accept(e.get());
                 ++ctr;
             }
         }
@@ -108,16 +108,15 @@ final class JdpTypeEntry<T> {
         int ctr = 0;
         if (baseList != null) {
             for (JdpEntry<? extends T> e : baseList) {
-                lambda.apply(e);
+                lambda.accept(e);
                 ++ctr;
             }
         }
         return ctr;
     }
     
-    JdpEntry<? extends T> getFirstEntry(String qualifier) {
-        List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
-        return baseList != null && baseList.size() > 0 ? baseList.get(0) : null;
+    List<JdpEntry<? extends T>> getEntries(String qualifier) {
+        return (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
     }
 
     List<T> getAll(String qualifier) {
@@ -127,6 +126,16 @@ final class JdpTypeEntry<T> {
         List<T> elementList = new ArrayList<T>(baseList.size());
         for (JdpEntry<? extends T> e : baseList)
             elementList.add(e.get());
+        return elementList;
+    }
+    
+    List<Class<? extends T>> getAllClasses(String qualifier) {
+        List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
+        if (baseList == null)
+            return null;
+        List<Class<? extends T>> elementList = new ArrayList<Class<? extends T>>(baseList.size());
+        for (JdpEntry<? extends T> e : baseList)
+            elementList.add(e.actualType);
         return elementList;
     }
 }

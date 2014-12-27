@@ -4,12 +4,12 @@
     <parent>
         <groupId>de.jpaw</groupId>
         <artifactId>jpaw-se-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
         <relativePath/>
     </parent>
 
     <artifactId>jdp-base</artifactId>
-    <version>0.0.3</version>
+    <version>0.2.0</version>
     <packaging>pom</packaging>
 
     <description>Common configuration settings for all JDP projects</description>
@@ -94,15 +94,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${javadoc.plugin.version}</version>
-                <configuration>
-                    <charset>UTF-8</charset>
-                </configuration>
             </plugin>
         </plugins>
     </reporting>
 
     <modules>
+        <module>../jdp-bom/pom.xml</module>
         <module>../jdp-core/pom.xml</module>
         <module>../jdp-test/pom.xml</module>
     </modules>
