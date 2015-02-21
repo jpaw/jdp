@@ -25,6 +25,11 @@
                 <artifactId>jdp-test</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>de.jpaw</groupId>
+                <artifactId>jdp-benchmarks</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
