@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="JDP unit tests" verbose="1" parallel="false">
+    <test name="Injection Tests" junit="false">
+        <groups>
+            <run>
+                <exclude name="integration" />
+            </run>
+        </groups>
+        <packages>
+            <package name="de.jpa.jdp.tests.singleton" />
+            <package name="de.jpa.jdp.tests.dependent" />
+        </packages>
+    </test>
+</suite>
