@@ -379,17 +379,23 @@ public class Jdp {
         
     }
     
-    static private final List<StartupShutdown> lifecycleBeans = new ArrayList<StartupShutdown>(40);
     
-    /** Scans the classpath for all (no)DI relevant annotations. */
-    static public void init(String prefix) {
+    static public void scanClasses(String prefix) {
         LOG.info("JDP (a no DI framework) scanner running for package prefix {}", prefix);
-
-        Reflections reflections = new Reflections(prefix);
+        
+        Reflections reflections = ReflectionsPackageCache.get(prefix);
         initsub(reflections, Singleton.class, Scopes.LAZY_SINGLETON);
         initsub(reflections, Dependent.class, Scopes.DEPENDENT);
         initsub(reflections, PerThread.class, Scopes.PER_THREAD);
         initsub(reflections, ScopeWithCustomProvider.class, Scopes.CUSTOM);
+    }
+    
+    static private final List<StartupShutdown> lifecycleBeans = new ArrayList<StartupShutdown>(40);
+    
+    static public void runStartups(String prefix) {
+        LOG.info("JDP startup phase for {} begins", prefix);
+        
+        Reflections reflections = ReflectionsPackageCache.get(prefix);
 
         Set<Class<?>> startups = reflections.getTypesAnnotatedWith(Startup.class);
         if (startups.size() > 0) {
@@ -441,7 +447,13 @@ public class Jdp {
                 }
             }
         }
-        LOG.info("JDP initialization for {} complete", prefix);
+        LOG.info("JDP startup phase for {} complete", prefix);
+    }
+    
+    /** Combined scan / startup along the classpath for all (no)DI relevant annotations. */
+    static public void init(String prefix) {
+        scanClasses(prefix);
+        runStartups(prefix);
     }
     
     /** Runs all shutdown code. */
