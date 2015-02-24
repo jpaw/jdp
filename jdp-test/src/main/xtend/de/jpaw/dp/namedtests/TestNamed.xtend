@@ -46,5 +46,10 @@ class MainTestMain {
         
         val sedan = Jdp.getOptional(Car, "Sedan")
         println('''The sedan is «sedan?.class?.simpleName ?: "null"»''')
+        
+        val anySuv = Jdp.getAllClasses(Car, "SUV")
+        val anyCar = Jdp.getAllClassesAnyQualifier(Car)
+        println('''The SUVs are «anySuv.map[simpleName].join(', ')»''')
+        println('''All known cars are «anyCar.map[simpleName].join(', ')»''')
     }
 }

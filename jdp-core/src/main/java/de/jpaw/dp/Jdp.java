@@ -156,6 +156,12 @@ public class Jdp {
 
     }
 
+    /** Get all valid matches regardless of qualifier, or null if the type is not known. */
+    static public <T> Set<T> getAllAnyQualifier(Class<T> type) {
+        JdpTypeEntry<T> te = getType(type);
+        return te == null ? null : te.getAll();
+    }
+
     /** Get all valid matches. The primary match is returned as the first list element. */
     static public <T> List<T> getAll(Class<T> type) {
         return getAll(type, null);
@@ -167,6 +173,12 @@ public class Jdp {
         return te == null ? null : te.getAll(qualifier);
     }
 
+    /** Get all valid matches regardless of qualifier, or null if the type is not known. */
+    static public <T> Set<Class<? extends T>> getAllClassesAnyQualifier(Class<T> type) {
+        JdpTypeEntry<T> te = getType(type);
+        return te == null ? null : te.getAllClasses();
+    }
+    
     /** Get all valid matches. The primary match is returned as the first list element. */
     static public <T> List<Class<? extends T>> getAllClasses(Class<T> type) {
         return getAllClasses(type, null);

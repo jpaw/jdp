@@ -2,8 +2,10 @@ package de.jpaw.dp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** The JdpTypeEntry stores the lists of qualified and unqualified entries for a given interface (or base class).
  * The generics type parameter T is the precise class of the interface / base class. The lists are supertypes (which extend T) */
@@ -119,6 +121,7 @@ final class JdpTypeEntry<T> {
         return (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
     }
 
+    /** Returns an instance of every matching class for the given qualifier (or entries without a qualifier in case qualifier is null). */
     List<T> getAll(String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         if (baseList == null)
@@ -129,6 +132,7 @@ final class JdpTypeEntry<T> {
         return elementList;
     }
     
+    /** Returns the list of matching classes for the given qualifier (or entries without a qualifier in case qualifier is null). */
     List<Class<? extends T>> getAllClasses(String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         if (baseList == null)
@@ -137,5 +141,33 @@ final class JdpTypeEntry<T> {
         for (JdpEntry<? extends T> e : baseList)
             elementList.add(e.actualType);
         return elementList;
+    }
+    
+    /** Returns an instance of every matching class regardless of qualifiers. */
+    Set<T> getAll() {
+        Set<T> result = new HashSet<T>();
+        for (JdpEntry<? extends T> e: unqualifiedEntries) {
+            result.add(e.get());
+        }
+        for (List<JdpEntry<? extends T>> ql : qualifiedEntries.values()) {
+            for (JdpEntry<? extends T> e: ql) {
+                result.add(e.get());
+            }
+        }
+        return result;
+    }
+    
+    /** Returns the set of matching classes regardless of qualifiers. */
+    Set<Class<? extends T>> getAllClasses() {
+        Set<Class<? extends T>> result = new HashSet<Class<? extends T>>();
+        for (JdpEntry<? extends T> e: unqualifiedEntries) {
+            result.add(e.actualType);
+        }
+        for (List<JdpEntry<? extends T>> ql : qualifiedEntries.values()) {
+            for (JdpEntry<? extends T> e: ql) {
+                result.add(e.actualType);
+            }
+        }
+        return result;
     }
 }
