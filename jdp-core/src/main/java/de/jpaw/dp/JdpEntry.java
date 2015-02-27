@@ -23,6 +23,7 @@ final public class JdpEntry<T> implements Provider<T> {
     public final String qualifier;      // the qualifier - either provided with the constructor or autodetected from @Named annotation
     public final boolean isAlternative; // autodetected, if @Alternative annotation is set, the entry won't be used unless explicitly requested by config files or bind requests 
     public final boolean isDefault;     // autodetected, if the @Default annotation is set, the entry will be choosen amount others with higher priority 
+    public final boolean isFallback;    // autodetected, if the @Fallback annotation is set, the entry will be choosen only if no other exists. 
     public final boolean specializes;   // autodetected, if @Specializes annotation is set, the entry will override any parent class
     public final Scopes myScope;
     public final Class<T> actualType; // the requested type (interface for example)
@@ -61,6 +62,7 @@ final public class JdpEntry<T> implements Provider<T> {
         this.customScope = null;
         this.isAlternative = false;
         this.isDefault = false;
+        this.isFallback = false;
         this.specializes = false;
     }
 
@@ -84,6 +86,7 @@ final public class JdpEntry<T> implements Provider<T> {
         this.qualifier = (anno == null ? null : anno.value());
         this.isAlternative = actualType.getAnnotation(Alternative.class) != null;
         this.isDefault = actualType.getAnnotation(Default.class) != null;
+        this.isFallback = actualType.getAnnotation(Fallback.class) != null;
         this.specializes = actualType.getAnnotation(Specializes.class) != null;
         this.customScope = myScope == Scopes.PER_THREAD
                 ? new ThreadScopeWithDelegate(new DelegateProvider(actualType))
@@ -98,6 +101,7 @@ final public class JdpEntry<T> implements Provider<T> {
         this.qualifier = (anno == null ? null : anno.value());
         this.isAlternative = actualType.getAnnotation(Alternative.class) != null;
         this.isDefault = actualType.getAnnotation(Default.class) != null;
+        this.isFallback = actualType.getAnnotation(Fallback.class) != null;
         this.specializes = actualType.getAnnotation(Specializes.class) != null;
         this.customScope = customProvider;
     }

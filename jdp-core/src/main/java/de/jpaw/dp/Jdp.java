@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import de.jpaw.dp.exceptions.ClassRegisteredTwiceException;
 import de.jpaw.dp.exceptions.DuplicateStartupSortOrderException;
 import de.jpaw.dp.exceptions.MissingOnStartupMethodException;
+import de.jpaw.dp.exceptions.MultipleDefaultsException;
+import de.jpaw.dp.exceptions.MultipleFallbacksException;
 import de.jpaw.dp.exceptions.NoSuitableImplementationException;
 import de.jpaw.dp.exceptions.NoSuitableProviderException;
 import de.jpaw.dp.exceptions.NonuniqueImplementationException;
@@ -133,16 +135,40 @@ public class Jdp {
             if (entries != null && entries.size() > 0) {
                 JdpEntry<? extends T> candidate = entries.get(0);       // first shot at an result
                 if (entries.size() > 1) {
-                    // need to cut down the result set... Filter away all alternatives and ones which have been specialized
+                    // perform a second scanning with detailed prioritization of the candidates 
+                    JdpEntry<? extends T> myFallback = null;
+                    JdpEntry<? extends T> myDefault = null;
+                    // need to cut down the result set... Filter away all alternatives, fallbacks and ones which have been specialized
                     int countEligible = 0;
                     for (JdpEntry<? extends T> e : entries) {
                         if (!e.isAlternative && classesOverriddenBySpecialized.get(e.actualType) == null) {
-                            ++countEligible;
-                            candidate = e;
+                            if (e.isDefault) {
+                                if (myDefault != null)
+                                    throw new MultipleDefaultsException(type, qualifier);
+                                myDefault = e;
+                            } else if (e.isFallback) {
+                                if (myFallback != null)
+                                    throw new MultipleFallbacksException(type, qualifier);
+                                myFallback = e;
+                            } else {
+                                ++countEligible;
+                                candidate = e;
+                            }
                         }
                     }
-                    if (countEligible > 1)
+                    if (myDefault != null)
+                        return (Provider<T>)myDefault;  // one has been specified to be priority
+                    if (countEligible > 1) {
+                        // too many possibilities
                         throw new NonuniqueImplementationException(type, qualifier);
+                    }
+                    if (countEligible == 0) {
+                        // no regular option, use the fallback if it exists
+                        if (myDefault != null)
+                            return (Provider<T>)myDefault;  // all fine, one has been specified to be priority
+                        // throw new NoSuitableImplementationException(type, qualifier);
+                        // fall through, use the initial entry (which at this point has turned out to be an Alternative)
+                    }
                 }
                 return (Provider<T>)candidate;      // valid because JdpEntry<T> implements Provider<T>
             }
@@ -395,77 +421,103 @@ public class Jdp {
     static public void scanClasses(String prefix) {
         LOG.info("JDP (a no DI framework) scanner running for package prefix {}", prefix);
         
-        Reflections reflections = ReflectionsPackageCache.get(prefix);
-        initsub(reflections, Singleton.class, Scopes.LAZY_SINGLETON);
-        initsub(reflections, Dependent.class, Scopes.DEPENDENT);
-        initsub(reflections, PerThread.class, Scopes.PER_THREAD);
-        initsub(reflections, ScopeWithCustomProvider.class, Scopes.CUSTOM);
+        scanClasses(ReflectionsPackageCache.get(prefix));
+    }
+    
+    /** Scan classes for the provided reflections parameters. */
+    static public void scanClasses(Reflections ... reflections) {
+        for (int i = 0; i < reflections.length; ++i) {
+            initsub(reflections[i], Singleton.class, Scopes.LAZY_SINGLETON);
+            initsub(reflections[i], Dependent.class, Scopes.DEPENDENT);
+            initsub(reflections[i], PerThread.class, Scopes.PER_THREAD);
+            initsub(reflections[i], ScopeWithCustomProvider.class, Scopes.CUSTOM);
+        }
     }
     
     static private final List<StartupShutdown> lifecycleBeans = new ArrayList<StartupShutdown>(40);
+    static private final Set<Class<?>> lifecycleBeanSkips = new HashSet<Class<?>>(40);
     
     static public void runStartups(String prefix) {
         LOG.info("JDP startup phase for {} begins", prefix);
         
-        Reflections reflections = ReflectionsPackageCache.get(prefix);
+        runStartups(ReflectionsPackageCache.get(prefix));
+        
+        LOG.info("JDP startup phase for {} complete", prefix);
+    }
+    
+    static public void runStartups(Reflections ... reflections) {
+        for (int i = 0; i < reflections.length; ++i) {
+            Set<Class<?>> startups = reflections[i].getTypesAnnotatedWith(Startup.class);
+            if (startups.size() > 0) {
+                Map<Integer, Class<?>> hashedStartups = new HashMap<Integer, Class<?>>(startups.size());
+                for (Class<?> cls : startups) {
+                    // check for exclusion list
+                    if (!lifecycleBeanSkips.contains(cls)) {
+                        // Startup anno = cls.getDeclaredAnnotation(Startup.class); // Java 1.8 only
+                        Startup anno = cls.getAnnotation(Startup.class); // not working
+                        Integer sortValue = anno.value();
+                        Class<?> oldVal = hashedStartups.put(sortValue, cls);
+                        if (oldVal != null) {
+                            throw new DuplicateStartupSortOrderException(oldVal, cls, sortValue);
+                        }
+                    }
+                }
+                // sort the stuff....
+                SortedMap<Integer, Class<?>> sortedStartups = new TreeMap<Integer, Class<?>>(hashedStartups);
+                // run the methods...
+                for (Class<?> cls : sortedStartups.values()) {
+                    // determine if we want the static or the dynamic variant
+                    if (StartupOnly.class.isAssignableFrom(cls)) {
+                        // dynamic path
+                        LOG.info("    invoking instance {}.onStartup()", cls.getCanonicalName());
+                        StartupOnly bean = null;
+                        try {
+                            bean = (StartupOnly) cls.newInstance();
+                        } catch (Exception e) {
+                            // convert the RuntimeException
+                            throw new StartupBeanInstantiationException(cls, e);
+                        }
+                        // invoke then method
+                        bean.onStartup();
 
-        Set<Class<?>> startups = reflections.getTypesAnnotatedWith(Startup.class);
-        if (startups.size() > 0) {
-            Map<Integer, Class<?>> hashedStartups = new HashMap<Integer, Class<?>>(startups.size());
-            for (Class<?> cls : startups) {
-                // Startup anno = cls.getDeclaredAnnotation(Startup.class); // Java 1.8 only
-                Startup anno = cls.getAnnotation(Startup.class); // not working
-                Integer sortValue = anno.value();
-                Class<?> oldVal = hashedStartups.put(sortValue, cls);
-                if (oldVal != null) {
-                    throw new DuplicateStartupSortOrderException(oldVal, cls, sortValue);
-                }
-            }
-            // sort the stuff....
-            SortedMap<Integer, Class<?>> sortedStartups = new TreeMap<Integer, Class<?>>(hashedStartups);
-            // run the methods...
-            for (Class<?> cls : sortedStartups.values()) {
-                // determine if we want the static or the dynamic variant
-                if (StartupOnly.class.isAssignableFrom(cls)) {
-                    // dynamic path
-                    LOG.info("    invoking {}.onStartup()", cls.getCanonicalName());
-                    StartupOnly bean = null;
-                    try {
-                        bean = (StartupOnly)cls.newInstance();
-                    } catch (Exception e) {
-                        // convert the RuntimeException
-                        throw new StartupBeanInstantiationException(cls, e);
-                    }
-                    // invoke then method
-                    bean.onStartup();
-                    
-                    // Test if we want shutdown as well. In that case, register the bean.
-                    if (bean instanceof StartupShutdown)
-                        lifecycleBeans.add((StartupShutdown) bean);
-                } else {
-                    // combined reflection code with invoke
-                    LOG.info("    invoking static {}.onStartup()", cls.getCanonicalName());
-                    Method startupMethod = null;
-                    try {
-                        startupMethod = cls.getMethod("onStartup");
-                    } catch (Exception e) {
-                        throw new MissingOnStartupMethodException(cls, e);
-                    }
-                    try {
-                        startupMethod.invoke(cls);
-                    } catch (Exception e) {
-                        throw new StartupMethodExecutionException(cls, e);
+                        // Test if we want shutdown as well. In that case, register the bean.
+                        if (bean instanceof StartupShutdown)
+                            lifecycleBeans.add((StartupShutdown) bean);
+                    } else {
+                        // combined reflection code with invoke
+                        LOG.info("    invoking static {}.onStartup()", cls.getCanonicalName());
+                        Method startupMethod = null;
+                        try {
+                            startupMethod = cls.getMethod("onStartup");
+                        } catch (Exception e) {
+                            throw new MissingOnStartupMethodException(cls, e);
+                        }
+                        try {
+                            startupMethod.invoke(cls);
+                        } catch (Exception e) {
+                            throw new StartupMethodExecutionException(cls, e);
+                        }
                     }
                 }
+
             }
         }
-        LOG.info("JDP startup phase for {} complete", prefix);
     }
     
     /** Combined scan / startup along the classpath for all (no)DI relevant annotations. */
     static public void init(String prefix) {
         scanClasses(prefix);
         runStartups(prefix);
+    }
+    
+    /** Init for prescanned reflections parameters. */
+    static public void init(Reflections ... reflections) {
+        scanClasses(reflections);
+        runStartups(reflections);
+    }
+    
+    static public void skipStartupClass(Class<?> cls) {
+        lifecycleBeanSkips.add(cls);
     }
     
     /** Runs all shutdown code. */
@@ -490,6 +542,7 @@ public class Jdp {
     static public void reset() {
         LOG.info("JDP RESET called");
         lifecycleBeans.clear();
+        lifecycleBeanSkips.clear();
         typeIndex.clear();
         allAutodetectedClasses.clear(); 
         classesOverriddenBySpecialized.clear();

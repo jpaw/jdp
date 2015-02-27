@@ -49,6 +49,14 @@ interface CustomScope<T> extends Provider<T> {
 annotation Default {
 }
 
+/** The Fallback qualifier defines that the annotated class is choosen if no other exist, 
+ * as a last resort, i.e. it is opposite of Default.
+ * Classes annotated with this are usually no operation stubs.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+annotation Fallback {
+}
+
 /** The Alternative qualifier defines that the annotated class is not selected for injection, unless explicitly bound. */
 @Retention(RetentionPolicy.RUNTIME)
 annotation Alternative {
