@@ -14,7 +14,7 @@ annotation Singleton {
 /** The Dependent scope defines that there is a new instance of this class constructed every time the getter is invoked.
  */
 annotation Dependent {
-} 
+}
 /** The Dependent scope defines that there is a new instance of this class for every thread.
  */
 annotation PerThread {
@@ -22,7 +22,7 @@ annotation PerThread {
 
 // annotation CustomScoped...
 /** A provider is a class which returns the correct instance of a type every time the get() methos is invoked.
- * In the current implementation, the built-in providers for Singleton and Dependent are dependent scoped. 
+ * In the current implementation, the built-in providers for Singleton and Dependent are dependent scoped.
  */
 interface Provider<T> {
     def T get();
@@ -49,7 +49,7 @@ interface CustomScope<T> extends Provider<T> {
 annotation Default {
 }
 
-/** The Fallback qualifier defines that the annotated class is choosen if no other exist, 
+/** The Fallback qualifier defines that the annotated class is choosen if no other exist,
  * as a last resort, i.e. it is opposite of Default.
  * Classes annotated with this are usually no operation stubs.
  */

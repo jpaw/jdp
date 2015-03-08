@@ -2,12 +2,12 @@ package de.jpaw.dp;
 
 public class ThreadScopeWithDelegate<T> extends ThreadLocal<T> implements CustomScope<T> {
     private final Provider<T> delegate;
-    
+
     public ThreadScopeWithDelegate(Provider<T> delegate) {
         super();
         this.delegate = delegate;
     }
-    
+
     @Override
     public T get() {
         T current = get();

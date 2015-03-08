@@ -6,14 +6,14 @@ import org.slf4j.LoggerFactory;
 import de.jpaw.dp.exceptions.CannotCreateProviderException;
 
 /** The JdpEntry stores information about a specific class or instance.
- * 
+ *
  * For every autodetected Class (i,e, class annotated by some scope annotation), there is
  * exactly one instance of JdpEntry.
  * The JdpEntry instances are indexed by the JdpTypeEntry class, which list possible assignments.
  * While a JdpEntry is an (almost) immutable class, the JdpTypeEntry instances can vary over time,
  * as programmatic bindings are performed. (JdpEntry is almost immutable, as the instance field is
  * initialized to null and only assigned later, when required, for classes of scope Singleton.)
- *  
+ *
  * @author Michael Bischoff
  *
  * @param <T> - the actual class this instance describes.
@@ -21,16 +21,16 @@ import de.jpaw.dp.exceptions.CannotCreateProviderException;
 final public class JdpEntry<T> implements Provider<T> {
     private static final Logger LOG = LoggerFactory.getLogger(JdpEntry.class);
     public final String qualifier;      // the qualifier - either provided with the constructor or autodetected from @Named annotation
-    public final boolean isAlternative; // autodetected, if @Alternative annotation is set, the entry won't be used unless explicitly requested by config files or bind requests 
-    public final boolean isDefault;     // autodetected, if the @Default annotation is set, the entry will be choosen amount others with higher priority 
-    public final boolean isFallback;    // autodetected, if the @Fallback annotation is set, the entry will be choosen only if no other exists. 
+    public final boolean isAlternative; // autodetected, if @Alternative annotation is set, the entry won't be used unless explicitly requested by config files or bind requests
+    public final boolean isDefault;     // autodetected, if the @Default annotation is set, the entry will be choosen amount others with higher priority
+    public final boolean isFallback;    // autodetected, if the @Fallback annotation is set, the entry will be choosen only if no other exists.
     public final boolean specializes;   // autodetected, if @Specializes annotation is set, the entry will override any parent class
     public final Scopes myScope;
     public final Class<T> actualType; // the requested type (interface for example)
     private T instance = null; // if it's a singleton: the unique instance (not null once it has been called the first time)
-    private final Provider<T> customScope; 
+    private final Provider<T> customScope;
 //    private boolean overriddenBySpecialized = false;
-    
+
     private static class DelegateProvider<T> implements Provider<T> {
         private final Class<T> cls;
         DelegateProvider(Class<T> cls) {
@@ -45,7 +45,7 @@ final public class JdpEntry<T> implements Provider<T> {
                 return null;
             }
         }
-        
+
     }
     /** create a new entry from a provided instance without a qualifier - this is a singleton. */
     JdpEntry(T providedInstance) {
@@ -66,7 +66,7 @@ final public class JdpEntry<T> implements Provider<T> {
         this.specializes = false;
     }
 
-    
+
     private final CustomScope<T> getCustomProvider(Class<T> actualType) {
         Class<? extends CustomScope<?>> myScopeClass = actualType.getAnnotation(ScopeWithCustomProvider.class).value();
         try {
@@ -77,7 +77,7 @@ final public class JdpEntry<T> implements Provider<T> {
             throw new CannotCreateProviderException(actualType, myScopeClass, e);
         }
     }
-    
+
     /** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */
     public JdpEntry(Class<T> actualType, Scopes myScope) {
         this.myScope = myScope;

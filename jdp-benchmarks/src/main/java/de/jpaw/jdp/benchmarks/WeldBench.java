@@ -39,12 +39,12 @@ import de.jpaw.jdp.benchmarks.weld.MySingletonInterface;
 @BenchmarkMode(Mode.AverageTime)
 public class WeldBench {
     private static final int NUM = 1000;
-    
+
     public int start = 7823643;
-    
+
     private Weld myWeld;
     private WeldContainer container;
-    
+
     private MyASInterface myAS;
     private MyASEInterface myASE;
     private MyDefaultInterface myDefault;
@@ -55,7 +55,7 @@ public class WeldBench {
     private <T> T getBean(Class<T> type) {
         return container.instance().select(type).get();
     }
-    
+
     @Setup
     public void setupWeld() {
         myWeld = new Weld();
@@ -67,7 +67,7 @@ public class WeldBench {
         myDefault = getBean(MyDefaultInterface.class);
         myException = getBean(MySingletonExceptionInterface.class);
     }
-    
+
     @TearDown
     public void shutdownWeld() {
         myWeld.shutdown();
@@ -80,7 +80,7 @@ public class WeldBench {
             sum += mySingleton.compute(start + i);
         return sum;
     }
-    
+
     @Benchmark
     public int callDependents() {
         int sum = 0;
@@ -88,7 +88,7 @@ public class WeldBench {
             sum += myDependent.compute(start + i);
         return sum;
     }
-    
+
     @Benchmark
     public int callApplicationScoped() {
         int sum = 0;
@@ -96,7 +96,7 @@ public class WeldBench {
             sum += myAS.compute(start + i);
         return sum;
     }
-    
+
     @Benchmark
     public int callDefault() {
         int sum = 0;
@@ -104,7 +104,7 @@ public class WeldBench {
             sum += myDefault.compute(start + i);
         return sum;
     }
-    
+
     @Benchmark
     public int callException() {
         try {
@@ -122,25 +122,25 @@ public class WeldBench {
             return -4;
         }
     }
-    
+
     @Benchmark
     public MySingletonInterface injectSingleton() {
         return getBean(MySingletonInterface.class);
     }
-    
+
     @Benchmark
     public MyDependentInterface injectDependent() {
         return getBean(MyDependentInterface.class);
     }
-    
+
     @Benchmark
     public MyASInterface injectApplicationScoped() {
         return getBean(MyASInterface.class);
     }
-    
+
     @Benchmark
     public MyDefaultInterface injectDefault() {
         return getBean(MyDefaultInterface.class);
     }
-    
+
 }

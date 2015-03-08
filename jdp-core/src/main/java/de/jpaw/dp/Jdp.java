@@ -56,14 +56,14 @@ import de.jpaw.dp.exceptions.StartupMethodExecutionException;
 public class Jdp {
     private static final Logger LOG = LoggerFactory.getLogger(Jdp.class);
     static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
-    static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope 
+    static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope
     static private Map<Class<?>, JdpEntry<?>> classesOverriddenBySpecialized = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used to mark classes which are overridden
-    
+
     // typesafe access methods
     static private <X> JdpTypeEntry<X> getType(Class<X> type) {
         return (JdpTypeEntry<X>) typeIndex.get(type);
     }
-    
+
     public static String dump(Class<?> type) {
         JdpTypeEntry<?> te = getType(type);
         if (te == null)
@@ -71,7 +71,7 @@ public class Jdp {
         else
             return "Registered entries for type "  + type.getSimpleName() + " are\n" + te.dump();
     }
-    
+
     public static String dump() {
         StringBuilder b = new StringBuilder(2000);
         b.append("Full Jdp type dump:\n");
@@ -80,7 +80,7 @@ public class Jdp {
         }
         return b.toString();
     }
-    
+
     /** returns an object of the requested type. Exception: if the type is an interface, an implementation of it is returned. */
     @Deprecated
     static public <T> T get(Class<T> type) {
@@ -95,7 +95,7 @@ public class Jdp {
     static public <T> T getRequired(Class<T> type) {
         return getRequired(type, null);
     }
-    
+
     /** Replaced by getOptional(). */
     @Deprecated
     static public <T> T get(Class<T> type, String qualifier) {
@@ -114,8 +114,8 @@ public class Jdp {
     static public <T> T get(Class<T> type, String qualifier, boolean isRequired) {
         return isRequired ? getRequired(type, qualifier) : getOptional(type, qualifier);
     }
-    
-    
+
+
 
     /** returns a provider for the requested type. */
     static public <T> Provider<T> getProvider(Class<T> type) {
@@ -126,7 +126,7 @@ public class Jdp {
         if (firstEntry == null) {
             throw new NoSuitableProviderException(type, qualifier);
         }
-        return firstEntry; 
+        return firstEntry;
     }
     static public <T> Provider<T> getOptionalProvider(Class<T> type, String qualifier) {
         JdpTypeEntry<T> te = getType(type);
@@ -135,7 +135,7 @@ public class Jdp {
             if (entries != null && entries.size() > 0) {
                 JdpEntry<? extends T> candidate = entries.get(0);       // first shot at an result
                 if (entries.size() > 1) {
-                    // perform a second scanning with detailed prioritization of the candidates 
+                    // perform a second scanning with detailed prioritization of the candidates
                     JdpEntry<? extends T> myFallback = null;
                     JdpEntry<? extends T> myDefault = null;
                     // need to cut down the result set... Filter away all alternatives, fallbacks and ones which have been specialized
@@ -173,10 +173,10 @@ public class Jdp {
                 return (Provider<T>)candidate;      // valid because JdpEntry<T> implements Provider<T>
             }
         }
-        return null; 
+        return null;
     }
 
-    
+
     /** Destructs all objects which have been created in this thread context. */
     static public void clearThreadContext() {
 
@@ -204,7 +204,7 @@ public class Jdp {
         JdpTypeEntry<T> te = getType(type);
         return te == null ? null : te.getAllClasses();
     }
-    
+
     /** Get all valid matches. The primary match is returned as the first list element. */
     static public <T> List<Class<? extends T>> getAllClasses(Class<T> type) {
         return getAllClasses(type, null);
@@ -217,14 +217,14 @@ public class Jdp {
     }
 
     /** Get the scope of the bound class by class name, without instantiating an instance.
-     *   
+     *
      */
     static public Scopes getScopeForClassname(Class<?> baseClass, String name) {
         return getScopeForClassname(baseClass, name, null);
     }
 
     /** Get the scope of the bound class by class name, without instantiating an instance.
-     *   
+     *
      */
     static public Scopes getScopeForClassname(Class<?> baseClass, String classname, String qualifier) {
         JdpTypeEntry<?> te = typeIndex.get(baseClass);
@@ -232,17 +232,17 @@ public class Jdp {
     }
 
     /** Get an instance for a given class name.
-     *   
+     *
      */
     static public <T> T getInstanceForClassname(Class<T> baseClass, String name) {
         return getInstanceForClassname(baseClass, name, null);
     }
-    
+
     /** perform something on all types */
     static public <T> int forAll(Class<T> baseClass, JdpExecutor<T> lambda) {
         return forAll(baseClass, null, lambda);
     }
-    
+
     /** perform something on all types */
     static public <T> int forAll(Class<T> baseClass, String qualifier, JdpExecutor<T> lambda) {
         JdpTypeEntry<T> te = getType(baseClass);
@@ -253,7 +253,7 @@ public class Jdp {
     static public <T> int forAllEntries(Class<T> baseClass, JdpExecutor<JdpEntry<? extends T>> lambda) {
         return forAllEntries(baseClass, null, lambda);
     }
-    
+
     /** perform something on all types */
     static public <T> int forAllEntries(Class<T> baseClass, String qualifier, JdpExecutor<JdpEntry<? extends T>> lambda) {
         JdpTypeEntry<T> te = getType(baseClass);
@@ -261,7 +261,7 @@ public class Jdp {
     }
 
     /** Get the scope of the bound class by class name, without instantiating an instance.
-     *   
+     *
      */
     static public <T> T getInstanceForClassname(Class<T> baseClass, String classname, String qualifier) {
         JdpTypeEntry<T> te = getType(baseClass);
@@ -311,7 +311,7 @@ public class Jdp {
         }
     }
     /** Bind source to the binding as primary, possibly clearing all other bindings.
-     * This uses the EAGER_SINGLETON type, as the instance does already exist. 
+     * This uses the EAGER_SINGLETON type, as the instance does already exist.
      * fluent xtend use:
      * Mega k = new Mega();
      * k.bindInstanceTo("Mega", null, true);   */
@@ -319,7 +319,7 @@ public class Jdp {
         JdpEntry<T> newEntry = new JdpEntry<T>(source, qualifier);
         bindEntryTo(newEntry, type, qualifier, clearOthers);
     }
-    // Java, give me default parameters please... 
+    // Java, give me default parameters please...
     static public <T> void bindInstanceTo(T source, Class<T> type, String qualifier) {
         JdpEntry<T> newEntry = new JdpEntry<T>(source, qualifier);
         bindEntryTo(newEntry, type, qualifier, true);
@@ -328,8 +328,8 @@ public class Jdp {
         JdpEntry<T> newEntry = new JdpEntry<T>(source, null);
         bindEntryTo(newEntry, type, null, true);
     }
-    
-    
+
+
     /** Bind a singleton class instance to its specific class type only, using no qualifier. */
     static public <T> void bind(T source) {
         JdpEntry<T> newEntry = new JdpEntry<T>(source, null);
@@ -361,7 +361,7 @@ public class Jdp {
             classesDone.add(cls);
             // register and descend recursion
             register(cls, newEntry);
-            for (Class<?> i : cls.getInterfaces()) {    // JAVABUG: Java is not precise enough here. cls.getInterfaces should consist of entries with Q as uperclass only! 
+            for (Class<?> i : cls.getInterfaces()) {    // JAVABUG: Java is not precise enough here. cls.getInterfaces should consist of entries with Q as uperclass only!
                 registerClassAndAllInterfaces((Class<? super Q>)i, newEntry, classesDone);
             }
 //            LOG.info("    <<< registered  {}", cls.getCanonicalName());
@@ -414,16 +414,16 @@ public class Jdp {
         for (Class<?> s : instances) {
             registerInternal(s, scope);
         }
-        
+
     }
-    
-    
+
+
     static public void scanClasses(String prefix) {
         LOG.info("JDP (a no DI framework) scanner running for package prefix {}", prefix);
-        
+
         scanClasses(ReflectionsPackageCache.get(prefix));
     }
-    
+
     /** Scan classes for the provided reflections parameters. */
     static public void scanClasses(Reflections ... reflections) {
         for (int i = 0; i < reflections.length; ++i) {
@@ -433,18 +433,18 @@ public class Jdp {
             initsub(reflections[i], ScopeWithCustomProvider.class, Scopes.CUSTOM);
         }
     }
-    
+
     static private final List<StartupShutdown> lifecycleBeans = new ArrayList<StartupShutdown>(40);
     static private final Set<Class<?>> lifecycleBeanSkips = new HashSet<Class<?>>(40);
-    
+
     static public void runStartups(String prefix) {
         LOG.info("JDP startup phase for {} begins", prefix);
-        
+
         runStartups(ReflectionsPackageCache.get(prefix));
-        
+
         LOG.info("JDP startup phase for {} complete", prefix);
     }
-    
+
     static public void runStartups(Reflections ... reflections) {
         for (int i = 0; i < reflections.length; ++i) {
             Set<Class<?>> startups = reflections[i].getTypesAnnotatedWith(Startup.class);
@@ -503,23 +503,23 @@ public class Jdp {
             }
         }
     }
-    
+
     /** Combined scan / startup along the classpath for all (no)DI relevant annotations. */
     static public void init(String prefix) {
         scanClasses(prefix);
         runStartups(prefix);
     }
-    
+
     /** Init for prescanned reflections parameters. */
     static public void init(Reflections ... reflections) {
         scanClasses(reflections);
         runStartups(reflections);
     }
-    
+
     static public void skipStartupClass(Class<?> cls) {
         lifecycleBeanSkips.add(cls);
     }
-    
+
     /** Runs all shutdown code. */
     static public void shutdown() {
         LOG.info("JDP SHUTDOWN called");
@@ -537,14 +537,14 @@ public class Jdp {
         lifecycleBeans.clear();         // be nice to duplicate calls of the shutdown method
         LOG.info("JDP shutdown complete");
     }
-    
+
     /** Clears all information for a fresh restart. Required in testing environments due to the static data. */
     static public void reset() {
         LOG.info("JDP RESET called");
         lifecycleBeans.clear();
         lifecycleBeanSkips.clear();
         typeIndex.clear();
-        allAutodetectedClasses.clear(); 
+        allAutodetectedClasses.clear();
         classesOverriddenBySpecialized.clear();
     }
 }

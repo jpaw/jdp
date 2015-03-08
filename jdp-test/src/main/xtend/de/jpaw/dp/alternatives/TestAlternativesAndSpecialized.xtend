@@ -16,15 +16,15 @@ interface Car {
 class DumboBuggyShouldNotBeSelected implements Car {
     override drive() {
         println("no, I am an alternative!")
-    }    
-} 
+    }
+}
 
 @Singleton
 class BaseCarShouldNotBeSelected implements Car {
     override drive() {
         println("no, I was overridden!")
     }
-} 
+}
 
 @Specializes
 @Singleton
@@ -32,7 +32,7 @@ class MegaCarShouldBeSelected extends BaseCarShouldNotBeSelected {
     override drive() {
         println("I'm driving mega car!")
     }
-} 
+}
 
 @Alternative
 @Singleton
@@ -48,7 +48,7 @@ class SomeCarWhichIsDrivenLater implements Car {
     override drive() {
         println("I'm doing the last round")
     }
-} 
+}
 
 class MainTestMain {
     def static void main(String [] args) {
@@ -56,13 +56,13 @@ class MainTestMain {
 
         // access from Java code
         Jdp.getRequired(Car).drive();
-        
+
         // access from xtend
         new SomeOtherClass().driveOtherCar
-        
+
         // modify the preference
         Jdp.bindClassWithoutQualifier(SomeCarWhichIsDrivenLater, Car)
-        
+
         // should result in a different one used from now on...
         new SomeOtherClass().driveOtherCar
     }
@@ -72,7 +72,7 @@ class MainTestMain {
 class SomeOtherClass {
     @Inject
     Car myCar
-    
+
     def void driveOtherCar() {
         myCar.drive
     }

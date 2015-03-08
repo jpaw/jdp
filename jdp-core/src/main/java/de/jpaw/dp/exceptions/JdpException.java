@@ -6,7 +6,7 @@ public abstract class JdpException extends RuntimeException {
     public JdpException(String msg, String qualifier) {
         super(qualifier == null ? msg : msg + " for qualifier <" + qualifier + ">");
     }
-    
+
     public JdpException(Throwable cause, String msg) {
         super(msg, cause);
     }
