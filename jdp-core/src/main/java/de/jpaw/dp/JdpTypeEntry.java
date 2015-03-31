@@ -25,13 +25,13 @@ final class JdpTypeEntry<T> {
     JdpTypeEntry(JdpEntry<T> initial) {
         addEntry(initial);
     }
-    
+
     /* remove all entries */
     final void clear() {
         unqualifiedEntries.clear();
         qualifiedEntries.clear();
     }
-    
+
     final void addEntry(JdpEntry<? extends T> additional) {
         if (additional.qualifier == null)
             unqualifiedEntries.add(additional);
@@ -46,7 +46,7 @@ final class JdpTypeEntry<T> {
             }
         }
     }
-    
+
     private static <T> void join(StringBuilder b, List<JdpEntry<? extends T>> types) {
         for (int i = 0; i < types.size(); ++i) {
             if (i > 0)
@@ -64,7 +64,7 @@ final class JdpTypeEntry<T> {
             b.append(':');
             b.append(' ');
             join(b, e.getValue());
-            
+
         }
         return b.toString();
     }
@@ -92,7 +92,7 @@ final class JdpTypeEntry<T> {
         // not found
         return null;
     }
-    
+
     int runForAll(String qualifier, JdpExecutor<T> lambda) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         int ctr = 0;
@@ -104,7 +104,7 @@ final class JdpTypeEntry<T> {
         }
         return ctr;
     }
-    
+
     int runForAllEntries(String qualifier, JdpExecutor<JdpEntry<? extends T>> lambda) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
         int ctr = 0;
@@ -116,7 +116,7 @@ final class JdpTypeEntry<T> {
         }
         return ctr;
     }
-    
+
     List<JdpEntry<? extends T>> getEntries(String qualifier) {
         return (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
     }
@@ -131,7 +131,7 @@ final class JdpTypeEntry<T> {
             elementList.add(e.get());
         return elementList;
     }
-    
+
     /** Returns the list of matching classes for the given qualifier (or entries without a qualifier in case qualifier is null). */
     List<Class<? extends T>> getAllClasses(String qualifier) {
         List<JdpEntry<? extends T>> baseList = (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
@@ -142,7 +142,7 @@ final class JdpTypeEntry<T> {
             elementList.add(e.actualType);
         return elementList;
     }
-    
+
     /** Returns an instance of every matching class regardless of qualifiers. */
     Set<T> getAll() {
         Set<T> result = new HashSet<T>();
@@ -156,7 +156,7 @@ final class JdpTypeEntry<T> {
         }
         return result;
     }
-    
+
     /** Returns the set of matching classes regardless of qualifiers. */
     Set<Class<? extends T>> getAllClasses() {
         Set<Class<? extends T>> result = new HashSet<Class<? extends T>>();

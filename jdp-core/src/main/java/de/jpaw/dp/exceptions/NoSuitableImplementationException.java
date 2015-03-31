@@ -10,5 +10,5 @@ public class NoSuitableImplementationException extends JdpException {
     public NoSuitableImplementationException(Class<?> type, String qualifier) {
         super(type.getCanonicalName(), qualifier);
     }
-    
+
 }

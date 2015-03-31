@@ -23,17 +23,17 @@ interface I3 {
 @Singleton
 class MultiInterfaceClass implements I1, I2, I3 {
     private static final AtomicInteger instanceCounter = new AtomicInteger();
-    
+
     private val myInstanceNo = instanceCounter.incrementAndGet
-    
+
     def static void resetCounter() {
         instanceCounter.set(0)
     }
-    
+
     override open() {
         return myInstanceNo
     }
-    
+
     override close() {
         return myInstanceNo
     }
@@ -41,7 +41,7 @@ class MultiInterfaceClass implements I1, I2, I3 {
 
 @Test(singleThreaded=true)
 class TestMIClassThenInterfaces {
-    
+
     @BeforeMethod
     def void setup() {
         Jdp.reset
@@ -56,14 +56,14 @@ class TestMIClassThenInterfaces {
         assertEquals(Jdp.getRequired(I3).open, 1)
         assertEquals(Jdp.getRequired(MultiInterfaceClass).close, 1)
     }
-    
+
     def void testInterfaceThenClass() {
         assertEquals(Jdp.getRequired(I1).open, 1)
         assertEquals(Jdp.getRequired(I2).close, 1)
         assertEquals(Jdp.getRequired(I3).open, 1)
         assertEquals(Jdp.getRequired(MultiInterfaceClass).close, 1)
     }
-    
+
     def void testInterfaceThenClassOrdering2() {
         assertEquals(Jdp.getRequired(I2).close, 1)
         assertEquals(Jdp.getRequired(I1).open, 1)

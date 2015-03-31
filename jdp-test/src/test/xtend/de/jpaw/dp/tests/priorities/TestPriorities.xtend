@@ -24,7 +24,7 @@ class Lead implements Metal, Letal, Leaden, Grey {
 @Singleton
 class Bronze implements Metal, Medal {
 }
- 
+
 @Singleton
 class Silver implements Metal, Medal, Grey {
 }
@@ -40,27 +40,27 @@ class Mercury implements Metal, Letal, Grey {
 
 @Test(singleThreaded=true)
 class TestPriorities {
-    
+
     @BeforeMethod
     def void setup() {
         Jdp.reset
         Jdp.init("de.jpaw.dp.tests.priorities")
     }
-    
+
     def void testFallback1() {
         assertEquals(Jdp.getRequired(Leaden).class, Lead)  // the only class is the fallback one
     }
     def void testFallback2() {
         assertEquals(Jdp.getRequired(Letal).class, Mercury)  // fallback is skipped in favour of other implementation
     }
-    
+
     def void testDefault1() {
         assertEquals(Jdp.getRequired(Metal).class, Gold)  // Gold has priority (with Fallback)
     }
     def void testDefault2() {
         assertEquals(Jdp.getRequired(Medal).class, Gold)  // Gold has priority (no Fallback)
     }
-    
+
     @Test(expectedExceptions=NonuniqueImplementationException)
     def void testNonUnique() {
         Jdp.getRequired(Grey)                           // fallback and no default, and multiple candidates

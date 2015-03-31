@@ -29,10 +29,10 @@ import de.jpaw.jdp.benchmarks.jdp.MyInterface;
 @BenchmarkMode(Mode.AverageTime)
 public class JdpBench {
     private static final int NUM = 1000;
-    
+
     private MyInterface mySingleton;
     private MyInterface myDependent;
-    
+
     public int start = 7823643;
 
     @Setup
@@ -42,7 +42,7 @@ public class JdpBench {
         mySingleton = Jdp.getRequired(JdpSingleton.class);
         myDependent = Jdp.getRequired(JdpDependent.class);
     }
-    
+
     @Benchmark
     public int callSingletons() {
         int sum = 0;
@@ -50,7 +50,7 @@ public class JdpBench {
             sum += mySingleton.compute(start + i);
         return sum;
     }
-    
+
     @Benchmark
     public int callException() {
         try {
@@ -59,7 +59,7 @@ public class JdpBench {
             return -4;
         }
     }
-    
+
     @Benchmark
     public int callDependents() {
         int sum = 0;
@@ -67,12 +67,12 @@ public class JdpBench {
             sum += myDependent.compute(start + i);
         return sum;
     }
-    
+
     @Benchmark
     public MyInterface injectSingleton() {
         return Jdp.getRequired(JdpSingleton.class);
     }
-    
+
     @Benchmark
     public MyInterface injectDependent() {
         return Jdp.getRequired(JdpDependent.class);

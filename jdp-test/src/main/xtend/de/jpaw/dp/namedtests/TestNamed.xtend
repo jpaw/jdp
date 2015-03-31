@@ -10,15 +10,15 @@ interface Car {
 }
 
 // a sample class, annotated with a DI scope. It's implementing an interface,
-// to showcase that (no)injection works on the interface as well as on the class itself. 
+// to showcase that (no)injection works on the interface as well as on the class itself.
 @Named("SUV")
 @Singleton
 class X3 implements Car {
     override drive(int number) {
         println("xdrive does " + number)
     }
-    
-} 
+
+}
 
 @Named("Sedan")
 @Singleton
@@ -26,8 +26,8 @@ class CClass implements Car {
     override drive(int number) {
         println("Mr and Mrs Smith are driving " + number)
     }
-    
-} 
+
+}
 
 @Named("SUV")
 @Singleton
@@ -35,18 +35,18 @@ class Defender implements Car {
     override drive(int number) {
         println("LandRover does " + number)
     }
-    
-} 
+
+}
 
 class MainTestMain {
     def static void main(String [] args) {
         Jdp.init("de.jpaw.dp.namedtests");
-        
+
         println(Jdp.dump)
-        
+
         val sedan = Jdp.getOptional(Car, "Sedan")
         println('''The sedan is «sedan?.class?.simpleName ?: "null"»''')
-        
+
         val anySuv = Jdp.getAllClasses(Car, "SUV")
         val anyCar = Jdp.getAllClassesAnyQualifier(Car)
         println('''The SUVs are «anySuv.map[simpleName].join(', ')»''')
