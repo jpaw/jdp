@@ -16,6 +16,9 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+
 import de.jpaw.dp.exceptions.ClassRegisteredTwiceException;
 import de.jpaw.dp.exceptions.DuplicateStartupSortOrderException;
 import de.jpaw.dp.exceptions.MissingOnStartupMethodException;
@@ -171,6 +174,9 @@ public class Jdp {
                     }
                 }
                 return (Provider<T>)candidate;      // valid because JdpEntry<T> implements Provider<T>
+            } else if (qualifier != null) {
+                // was looking for a specific qualifier, but none found. See if a global fallback exists
+                return (Provider<T>) te.getGlobalFallback();
             }
         }
         return null;
@@ -179,8 +185,27 @@ public class Jdp {
 
     /** Destructs all objects which have been created in this thread context. */
     static public void clearThreadContext() {
-
     }
+    
+    /** Returns all qualifiers for which an implemenation has been found. */
+    static public <T> Set<String> getQualifiers(Class<T> type) {
+        JdpTypeEntry<T> te = getType(type);
+        return te == null ? ImmutableSet.<String>of() : ImmutableSet.copyOf(te.getQualifiers());
+    }
+
+    /** Returns one instance per non-null qualifier, using the usual resolution rules. */
+    static public <T> List<T> getOneInstancePerQualifier(Class<T> type) {
+        JdpTypeEntry<T> te = getType(type);
+        Set<String> qualifiers = te.getQualifiers();
+        if (qualifiers == null || qualifiers.size() == 0)
+            return ImmutableList.<T>of();
+        List<T> list = new ArrayList<T>(qualifiers.size());
+        for (String qualifier : qualifiers) {
+            list.add(getRequired(type, qualifier));
+        }
+        return list;
+    }
+
 
     /** Get all valid matches regardless of qualifier, or null if the type is not known. */
     static public <T> Set<T> getAllAnyQualifier(Class<T> type) {

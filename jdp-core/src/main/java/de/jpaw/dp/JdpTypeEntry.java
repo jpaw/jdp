@@ -116,7 +116,21 @@ final class JdpTypeEntry<T> {
         }
         return ctr;
     }
+    
+    /** Returns the global fallback, if it exists, else null. */
+    Provider<? extends T> getGlobalFallback() {
+        for (JdpEntry<? extends T> e : unqualifiedEntries) {
+            if (e.isFallback && e.isAny)
+                return e;
+        }
+        return null;
+    }
 
+    /** Return the set of qualifiers for which at least one entry exists. */
+    Set<String> getQualifiers() {
+        return qualifiedEntries.keySet();
+    }
+    
     List<JdpEntry<? extends T>> getEntries(String qualifier) {
         return (qualifier == null ? unqualifiedEntries : qualifiedEntries.get(qualifier));
     }

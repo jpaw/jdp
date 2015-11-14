@@ -28,11 +28,15 @@ interface Provider<T> {
     def T get();
 }
 
-/** Can accompany @Inject, to return a list of types, instead of a single instance. */
+/** Can accompany @Inject, to return a list of types, instead of a single instance.
+ * Can accompany a scope annotated implementation with @Fallback but without qualifier, to indicate that it should be used for any qualifier.  
+ */
+@Retention(RetentionPolicy.RUNTIME)
 annotation Any {
 }
 
 /** Can accompany @Inject, to indicate that a missing value is acceptable (i.e. the target field is nullable). */
+@Retention(RetentionPolicy.RUNTIME)
 annotation Optional {
 }
 
