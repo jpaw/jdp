@@ -368,6 +368,18 @@ public class Jdp {
         Class<T> cls = (Class<T>) source.getClass();
         register(cls, newEntry);
     }
+    
+    static public <T> void bindByQualifierWithFallback(Class<T> interfaceClass, String qualifier) {
+        T bean = Jdp.getRequired(interfaceClass, qualifier);
+        if (qualifier != null) {
+            // check for success or fallback selection
+            Named anno = bean.getClass().getAnnotation(Named.class);
+            if (anno == null || !qualifier.equals(anno.value())) {
+                LOG.error("No {} implementation found for qualifier {}, using fallback", interfaceClass.getSimpleName(), qualifier);
+            }
+        }
+        Jdp.bindInstanceTo(bean, interfaceClass); // set preference
+    }
 
     private static <T> void register(Class<? super T> forWhat, JdpEntry<T> entry) {
         synchronized (typeIndex) {
