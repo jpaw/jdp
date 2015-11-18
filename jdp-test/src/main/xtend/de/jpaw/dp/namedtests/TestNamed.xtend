@@ -17,7 +17,6 @@ class X3 implements Car {
     override drive(int number) {
         println("xdrive does " + number)
     }
-
 }
 
 @Named("Sedan")
@@ -26,7 +25,6 @@ class CClass implements Car {
     override drive(int number) {
         println("Mr and Mrs Smith are driving " + number)
     }
-
 }
 
 @Named("SUV")
@@ -35,7 +33,6 @@ class Defender implements Car {
     override drive(int number) {
         println("LandRover does " + number)
     }
-
 }
 
 class MainTestMain {

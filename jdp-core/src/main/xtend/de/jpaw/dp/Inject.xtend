@@ -10,6 +10,11 @@ import java.util.List
 
 class InjectProcessor extends AbstractFieldProcessor {
 
+    def private static String skipGenericsTypeParameters(String it) {
+        val idx = indexOf('<')
+        return if (idx >= 0) substring(0, idx) else it
+    }
+    
     override doTransform(MutableFieldDeclaration fld, extension TransformationContext context) {
         val provider = Provider.newTypeReference.type
         val namedAnno = Named.newTypeReference.type
@@ -45,7 +50,7 @@ class InjectProcessor extends AbstractFieldProcessor {
         fld.initializer = if (fld.type.type == provider)
             [ '''«toJavaCode(jdpClass)».getProvider(«toJavaCode(fld.type.actualTypeArguments.get(0))».class«qualifierText»)''']
         else
-            [ '''«toJavaCode(jdpClass)».get«anyText»(«toJavaCode(theType)».class«qualifierText»)''']
+            [ '''«toJavaCode(jdpClass)».get«anyText»(«toJavaCode(theType).skipGenericsTypeParameters».class«qualifierText»)''']
         fld.final = true  // before xtend 2.7, this had issued an error as the initializer is not seen. Now it's fine!
     }
 }
