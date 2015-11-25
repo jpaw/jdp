@@ -86,5 +86,12 @@ class MainTestMain {
         for (e : oneCarPerQualifier) {
             println('''One is a «e.class.simpleName»''')
         }
+        
+        val carMapPerQualifier = getInstanceMapPerQualifier(Car)
+        if (carMapPerQualifier.size != 2)
+            throw new Exception("Unexpected behaviour: expected 2 cars, one SUV, one Sedan")
+        for (e : carMapPerQualifier.entrySet) {
+            println('''Mapped to «e.key» is a «e.value.class.simpleName»''')
+        }
     }
 }
