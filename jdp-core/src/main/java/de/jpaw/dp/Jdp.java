@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import de.jpaw.dp.exceptions.ClassRegisteredTwiceException;
@@ -199,11 +200,24 @@ public class Jdp {
         Set<String> qualifiers = te.getQualifiers();
         if (qualifiers == null || qualifiers.size() == 0)
             return ImmutableList.<T>of();
-        List<T> list = new ArrayList<T>(qualifiers.size());
+        List<T> list = new ArrayList<T>(qualifiers.size() * 2);
         for (String qualifier : qualifiers) {
             list.add(getRequired(type, qualifier));
         }
         return list;
+    }
+
+    /** Returns one instance per non-null qualifier, using the usual resolution rules. */
+    static public <T> Map<String, T> getInstanceMapPerQualifier(Class<T> type) {
+        JdpTypeEntry<T> te = getType(type);
+        Set<String> qualifiers = te.getQualifiers();
+        if (qualifiers == null || qualifiers.size() == 0)
+            return ImmutableMap.<String, T>of();
+        Map<String, T> map = new HashMap<String, T>(qualifiers.size() * 2);
+        for (String qualifier : qualifiers) {
+            map.put(qualifier, getRequired(type, qualifier));
+        }
+        return map;
     }
 
 
