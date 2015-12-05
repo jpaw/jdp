@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.reflections.Reflections;
 import org.slf4j.Logger;
@@ -59,6 +60,8 @@ import de.jpaw.dp.exceptions.StartupMethodExecutionException;
 
 public class Jdp {
     private static final Logger LOG = LoggerFactory.getLogger(Jdp.class);
+    private static final ConcurrentMap<String, Boolean> doNotRegisterFor = new ConcurrentHashMap(32);   // can be used to avoid registering injections also for java.lang.*
+    
     static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
     static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope
     static private Map<Class<?>, JdpEntry<?>> classesOverriddenBySpecialized = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used to mark classes which are overridden
@@ -83,6 +86,10 @@ public class Jdp {
             b.append("Registered entries for type "  + e.getKey().getSimpleName() + " are\n" + e.getValue().dump());
         }
         return b.toString();
+    }
+    
+    public static void excludePackagePrefix(String exclusion) {
+        doNotRegisterFor.putIfAbsent(exclusion, Boolean.TRUE);
     }
 
     /** returns an object of the requested type. Exception: if the type is an interface, an implementation of it is returned. */
@@ -369,14 +376,16 @@ public class Jdp {
     }
 
 
-    /** Bind a singleton class instance to its specific class type only, using no qualifier. */
+    /** Bind a singleton class instance to its specific class type only, using no qualifier.
+     * Works for any class or interface, ignoring any exclusion prefix. */
     static public <T> void bind(T source) {
         JdpEntry<T> newEntry = new JdpEntry<T>(source, null);
         Class<T> cls = (Class<T>) source.getClass();
         register(cls, newEntry);
     }
 
-    /** Bind a singleton class instance to its specific class type only, using an explicit qualifier. */
+    /** Bind a singleton class instance to its specific class type only, using an explicit qualifier.
+     * Works for any class or interface, ignoring any exclusion prefix. */
     static public <T> void bind(T source, String qualifier) {
         JdpEntry<T> newEntry = new JdpEntry<T>(source, qualifier);
         Class<T> cls = (Class<T>) source.getClass();
@@ -395,6 +404,7 @@ public class Jdp {
         Jdp.bindInstanceTo(bean, interfaceClass); // set preference
     }
 
+    /** Registers a class. Worker - no checks. */
     private static <T> void register(Class<? super T> forWhat, JdpEntry<T> entry) {
         synchronized (typeIndex) {
             JdpTypeEntry<? super T> e = getType(forWhat);
@@ -406,16 +416,23 @@ public class Jdp {
         }
     }
 
-    private static <Q> void registerClassAndAllInterfaces(Class<? super Q> cls, JdpEntry<Q> newEntry, Set<Class<?>> classesDone) {
+    private static <Q> void registerClassAndAllInterfaces(Class<? super Q> cls, JdpEntry<Q> newEntry, Set<Class<?>> classesDone, boolean skipCheck) {
+        if (!skipCheck) {
+            for (String exclusion : doNotRegisterFor.keySet()) {
+                if (cls.getCanonicalName().startsWith(exclusion)) {
+                    LOG.debug("    >>> not registering {} due to exclusion list entry {}", cls.getCanonicalName(), exclusion);
+                    return;
+                }
+            }
+        }
         if (!classesDone.contains(cls)) {
             LOG.debug("    >>> registering also {}", cls.getCanonicalName());
             classesDone.add(cls);
             // register and descend recursion
             register(cls, newEntry);
-            for (Class<?> i : cls.getInterfaces()) {    // JAVABUG: Java is not precise enough here. cls.getInterfaces should consist of entries with Q as uperclass only!
-                registerClassAndAllInterfaces((Class<? super Q>)i, newEntry, classesDone);
+            for (Class<?> i : cls.getInterfaces()) {    // JAVABUG: Java is not precise enough here. cls.getInterfaces should consist of entries with Q as superclass only!
+                registerClassAndAllInterfaces((Class<? super Q>)i, newEntry, classesDone, false);
             }
-//            LOG.info("    <<< registered  {}", cls.getCanonicalName());
         }
     }
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
@@ -430,13 +447,13 @@ public class Jdp {
 //        if (classesOverriddenBySpecialized.get(cls) != null) {
 //          newEntry.setOverriddenBySpecialized();
 //        }
-        registerClassAndAllInterfaces(cls, newEntry, classesDone);
+        registerClassAndAllInterfaces(cls, newEntry, classesDone, false);
         Class<? super T> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
             if (newEntry.specializes) {
                 classesOverriddenBySpecialized.put(parent, newEntry);
             }
-            registerClassAndAllInterfaces(parent, newEntry, classesDone);
+            registerClassAndAllInterfaces(parent, newEntry, classesDone, false);
             parent = parent.getSuperclass();
         }
 //        LOG.info("<<< register done for class {}", cls.getCanonicalName());
@@ -448,10 +465,10 @@ public class Jdp {
         LOG.debug(">>> register CUSTOM called for class {}", cls.getCanonicalName());
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, provider);
-        registerClassAndAllInterfaces(cls, newEntry, classesDone);
+        registerClassAndAllInterfaces(cls, newEntry, classesDone, true);
         Class<? super T> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
-            registerClassAndAllInterfaces(parent, newEntry, classesDone);
+            registerClassAndAllInterfaces(parent, newEntry, classesDone, false);
             parent = parent.getSuperclass();
         }
 //        LOG.info("<<< register CUSTOM done for class {}", cls.getCanonicalName());
@@ -516,11 +533,14 @@ public class Jdp {
                 // sort the stuff....
                 SortedMap<Integer, Class<?>> sortedStartups = new TreeMap<Integer, Class<?>>(hashedStartups);
                 // run the methods...
-                for (Class<?> cls : sortedStartups.values()) {
+                for (Map.Entry<Integer, Class<?>> se: sortedStartups.entrySet()) {
+                    final Class<?> cls = se.getValue();
                     // determine if we want the static or the dynamic variant
-                    if (StartupOnly.class.isAssignableFrom(cls)) {
+                    final boolean byInstance = StartupOnly.class.isAssignableFrom(cls);
+                    LOG.info("    Stage {}: invoking {} {}.onStartup()", se.getKey(), byInstance ? "dynamic" : "static", cls.getCanonicalName());
+                    
+                    if (byInstance) {
                         // dynamic path
-                        LOG.info("    invoking instance {}.onStartup()", cls.getCanonicalName());
                         StartupOnly bean = null;
                         try {
                             bean = (StartupOnly) cls.newInstance();
@@ -536,7 +556,6 @@ public class Jdp {
                             lifecycleBeans.add((StartupShutdown) bean);
                     } else {
                         // combined reflection code with invoke
-                        LOG.info("    invoking static {}.onStartup()", cls.getCanonicalName());
                         Method startupMethod = null;
                         try {
                             startupMethod = cls.getMethod("onStartup");
@@ -592,6 +611,7 @@ public class Jdp {
     /** Clears all information for a fresh restart. Required in testing environments due to the static data. */
     static public void reset() {
         LOG.info("JDP RESET called");
+        doNotRegisterFor.clear();
         lifecycleBeans.clear();
         lifecycleBeanSkips.clear();
         typeIndex.clear();
