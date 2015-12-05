@@ -19,7 +19,7 @@ import de.jpaw.dp.exceptions.CannotCreateProviderException;
  * @param <T> - the actual class this instance describes.
  */
 final public class JdpEntry<T> implements Provider<T> {
-    private static final Logger LOG = LoggerFactory.getLogger(JdpEntry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JdpEntry.class);
     public final String qualifier;      // the qualifier - either provided with the constructor or autodetected from @Named annotation
     public final boolean isAlternative; // autodetected, if @Alternative annotation is set, the entry won't be used unless explicitly requested by config files or bind requests
     public final boolean isDefault;     // autodetected, if the @Default annotation is set, the entry will be choosen amount others with higher priority
@@ -42,7 +42,7 @@ final public class JdpEntry<T> implements Provider<T> {
             try {
                 return cls.newInstance();
             } catch (Exception e) {
-                LOG.error("Cannot instantiate class {}", cls.getCanonicalName());
+                LOGGER.error("Cannot instantiate class {}", cls.getCanonicalName());
                 return null;
             }
         }
@@ -132,7 +132,7 @@ final public class JdpEntry<T> implements Provider<T> {
                 return customScope.get();
             }
         } catch (Exception e) {
-            LOG.error("Exception retrieving instance of {} with qualifier {}: {} ", actualType.getCanonicalName(), qualifier, e);
+            LOGGER.error("Exception retrieving instance of {} with qualifier {}: {} ", actualType.getCanonicalName(), qualifier, e);
             return null;
         }
         return null;

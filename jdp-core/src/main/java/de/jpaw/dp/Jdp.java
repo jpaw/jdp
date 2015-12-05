@@ -59,11 +59,12 @@ import de.jpaw.dp.exceptions.StartupMethodExecutionException;
 // RESTRICTION: All objects for a given type must have the same scope!
 
 public class Jdp {
-    private static final Logger LOG = LoggerFactory.getLogger(Jdp.class);
-    private static final ConcurrentMap<String, Boolean> doNotRegisterFor = new ConcurrentHashMap(32);   // can be used to avoid registering injections also for java.lang.*
+    private static final Logger LOGGER = LoggerFactory.getLogger(Jdp.class);
+    private static final ConcurrentMap<String, Boolean> doNotRegisterFor     = new ConcurrentHashMap<String, Boolean>(32);   // can be used to avoid registering injections also for java.lang.*
+    private static final ConcurrentMap<String, Boolean> onlyRegisterFor      = new ConcurrentHashMap<String, Boolean>(32);   // can be used to limit subtypes to listed packages
     
-    static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
-    static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope
+    static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex            = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
+    static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses         = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope
     static private Map<Class<?>, JdpEntry<?>> classesOverriddenBySpecialized = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used to mark classes which are overridden
 
     // typesafe access methods
@@ -88,8 +89,19 @@ public class Jdp {
         return b.toString();
     }
     
+    /** Superclass and interfaces are only registered if they do not start with one of the registered prefixes.
+     * @param exclusion Package prefix to exclude, for example "java."
+     */
     public static void excludePackagePrefix(String exclusion) {
         doNotRegisterFor.putIfAbsent(exclusion, Boolean.TRUE);
+    }
+
+    /** If at least one package prefix is provided by this method, then superclass and interfaces are only
+     * registered if they start with one of the explicitly registered prefixes.
+     * @param inclusion
+     */
+    public static void includePackagePrefix(String inclusion) {
+        onlyRegisterFor.putIfAbsent(inclusion, Boolean.TRUE);
     }
 
     /** returns an object of the requested type. Exception: if the type is an interface, an implementation of it is returned. */
@@ -174,9 +186,6 @@ public class Jdp {
                         throw new NonuniqueImplementationException(type, qualifier);
                     }
                     if (countEligible == 0) {
-                        // no regular option, use the fallback if it exists
-                        if (myDefault != null)
-                            return (Provider<T>)myDefault;  // all fine, one has been specified to be priority
                         // throw new NoSuitableImplementationException(type, qualifier);
                         // fall through, use the initial entry (which at this point has turned out to be an Alternative)
                     }
@@ -398,7 +407,7 @@ public class Jdp {
             // check for success or fallback selection
             Named anno = bean.getClass().getAnnotation(Named.class);
             if (anno == null || !qualifier.equals(anno.value())) {
-                LOG.error("No {} implementation found for qualifier {}, using fallback", interfaceClass.getSimpleName(), qualifier);
+                LOGGER.error("No {} implementation found for qualifier {}, using fallback", interfaceClass.getSimpleName(), qualifier);
             }
         }
         Jdp.bindInstanceTo(bean, interfaceClass); // set preference
@@ -418,15 +427,28 @@ public class Jdp {
 
     private static <Q> void registerClassAndAllInterfaces(Class<? super Q> cls, JdpEntry<Q> newEntry, Set<Class<?>> classesDone, boolean skipCheck) {
         if (!skipCheck) {
+            if (onlyRegisterFor.size() > 0) {
+                boolean includedPrefix = false;
+                for (String inclusion : onlyRegisterFor.keySet()) {
+                    if (cls.getCanonicalName().startsWith(inclusion)) {
+                        includedPrefix = true;
+                        break;
+                    }
+                }
+                if (!includedPrefix) {
+                    LOGGER.debug("    not registering for {}: not in inclusion list", cls.getCanonicalName());
+                    return;
+                }
+            }
             for (String exclusion : doNotRegisterFor.keySet()) {
                 if (cls.getCanonicalName().startsWith(exclusion)) {
-                    LOG.debug("    >>> not registering {} due to exclusion list entry {}", cls.getCanonicalName(), exclusion);
+                    LOGGER.debug("    not registering for {}: exclusion list entry {}", cls.getCanonicalName(), exclusion);
                     return;
                 }
             }
         }
         if (!classesDone.contains(cls)) {
-            LOG.debug("    >>> registering also {}", cls.getCanonicalName());
+            LOGGER.debug("    registering for {}", cls.getCanonicalName());
             classesDone.add(cls);
             // register and descend recursion
             register(cls, newEntry);
@@ -438,7 +460,7 @@ public class Jdp {
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
      * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
     private static <T> void registerInternal(Class<T> cls, Scopes scope) {
-        LOG.debug(">>> register called for class {}", cls.getCanonicalName());
+        LOGGER.debug("register({})", cls.getCanonicalName());
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
         if (allAutodetectedClasses.put(cls, newEntry) != null) {
@@ -456,13 +478,13 @@ public class Jdp {
             registerClassAndAllInterfaces(parent, newEntry, classesDone, false);
             parent = parent.getSuperclass();
         }
-//        LOG.info("<<< register done for class {}", cls.getCanonicalName());
+//        LOGGER.info("<<< register done for class {}", cls.getCanonicalName());
     }
 
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
      * The scope passed from the outside, it is used for autodetection of the classes. */
     public static <T> void registerWithCustomProvider(Class<T> cls, Provider<T> provider) {
-        LOG.debug(">>> register CUSTOM called for class {}", cls.getCanonicalName());
+        LOGGER.debug("register({}) CUSTOM", cls.getCanonicalName());
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, provider);
         registerClassAndAllInterfaces(cls, newEntry, classesDone, true);
@@ -471,12 +493,12 @@ public class Jdp {
             registerClassAndAllInterfaces(parent, newEntry, classesDone, false);
             parent = parent.getSuperclass();
         }
-//        LOG.info("<<< register CUSTOM done for class {}", cls.getCanonicalName());
+//        LOGGER.info("<<< register CUSTOM done for class {}", cls.getCanonicalName());
     }
 
     static private void initsub(Reflections reflections, Class<? extends Annotation> annotationClass, Scopes scope) {
         Set<Class<?>> instances = reflections.getTypesAnnotatedWith(annotationClass);
-        LOG.info("Found {} {}", instances.size(), annotationClass.getSimpleName());
+        LOGGER.info("Found {} {}", instances.size(), annotationClass.getSimpleName());
 
         // bind them (and maybe load them eagerly)
         for (Class<?> s : instances) {
@@ -487,7 +509,7 @@ public class Jdp {
 
 
     static public void scanClasses(String prefix) {
-        LOG.info("JDP (a no DI framework) scanner running for package prefix {}", prefix);
+        LOGGER.info("Jdp (a no DI framework) scanner running for package prefix {}", prefix);
 
         scanClasses(ReflectionsPackageCache.get(prefix));
     }
@@ -506,11 +528,11 @@ public class Jdp {
     static private final Set<Class<?>> lifecycleBeanSkips = new HashSet<Class<?>>(40);
 
     static public void runStartups(String prefix) {
-        LOG.info("JDP startup phase for {} begins", prefix);
+        LOGGER.info("Jdp startup phase for {} begins", prefix);
 
         runStartups(ReflectionsPackageCache.get(prefix));
 
-        LOG.info("JDP startup phase for {} complete", prefix);
+        LOGGER.info("Jdp startup phase for {} complete", prefix);
     }
 
     static public void runStartups(Reflections ... reflections) {
@@ -537,7 +559,7 @@ public class Jdp {
                     final Class<?> cls = se.getValue();
                     // determine if we want the static or the dynamic variant
                     final boolean byInstance = StartupOnly.class.isAssignableFrom(cls);
-                    LOG.info("    Stage {}: invoking {} {}.onStartup()", se.getKey(), byInstance ? "dynamic" : "static", cls.getCanonicalName());
+                    LOGGER.info("Startup stage {}: invoking {} {}.onStartup()", se.getKey(), byInstance ? "dynamic" : "static", cls.getCanonicalName());
                     
                     if (byInstance) {
                         // dynamic path
@@ -592,26 +614,27 @@ public class Jdp {
 
     /** Runs all shutdown code. */
     static public void shutdown() {
-        LOG.info("JDP SHUTDOWN called");
+        LOGGER.info("Jdp shutdown called");
         int i = lifecycleBeans.size();
         while (i > 0) {
             StartupShutdown bean = lifecycleBeans.get(--i);
-            LOG.info("    invoking {}.onShutdown()", bean.getClass().getCanonicalName());
+            LOGGER.info("Shutdown: invoking {}.onShutdown()", bean.getClass().getCanonicalName());
             try {
                 bean.onShutdown();
             } catch (Exception e) {
                 // we want to ensure that system level shutdown code is executed even if some business functions had issues
-                LOG.error("Shutdown problem: " + e.getMessage(), e);
+                LOGGER.error("Shutdown problem: " + e.getMessage(), e);
             }
         }
         lifecycleBeans.clear();         // be nice to duplicate calls of the shutdown method
-        LOG.info("JDP shutdown complete");
+        LOGGER.info("Jdp shutdown complete");
     }
 
     /** Clears all information for a fresh restart. Required in testing environments due to the static data. */
     static public void reset() {
-        LOG.info("JDP RESET called");
+        LOGGER.info("Jdp reset called");
         doNotRegisterFor.clear();
+        onlyRegisterFor.clear();
         lifecycleBeans.clear();
         lifecycleBeanSkips.clear();
         typeIndex.clear();
