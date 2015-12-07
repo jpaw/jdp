@@ -52,17 +52,6 @@
                     </configuration>
                 </plugin>
                 <plugin>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${source.plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire.plugin.version}</version>
