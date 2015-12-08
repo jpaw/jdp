@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>jdp-base</artifactId>
-    <version>0.2.6</version>
+    <version>0.2.7</version>
     <packaging>pom</packaging>
 
     <description>Common configuration settings for all JDP projects</description>
@@ -50,17 +50,6 @@
                             </fileset>
                         </filesets>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${source.plugin.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

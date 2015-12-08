@@ -132,7 +132,9 @@ final public class JdpEntry<T> implements Provider<T> {
                 return customScope.get();
             }
         } catch (Exception e) {
-            LOGGER.error("Exception retrieving instance of {} with qualifier {}: {} ", actualType.getCanonicalName(), qualifier, e);
+            LOGGER.error("Exception retrieving instance of {} with qualifier {}  of scope {}: {}: {}",
+                        actualType.getCanonicalName(), qualifier, myScope.name(), e.getClass().getSimpleName(), e.getMessage());
+            LOGGER.error("Stack trace of cause is {}", e);
             return null;
         }
         return null;
