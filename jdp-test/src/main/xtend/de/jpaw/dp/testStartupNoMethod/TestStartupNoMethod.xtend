@@ -27,6 +27,3 @@ class Main {
         Jdp.init("de.jpaw.dp.testStartupNoMethod");  // this should fail because onStartup has been misspelled in test170
     }
 }
-
-
-

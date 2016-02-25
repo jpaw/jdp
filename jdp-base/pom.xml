@@ -58,7 +58,7 @@
                     <configuration>
                         <!-- cannot use target/lib because we depend on additional 4rd party libraries (lz4), which are not in this project -->
                         <argLine>-Djava.library.path=${user.home}/lib</argLine>
-                    
+
                         <!-- This does not work:
                         <systemProperties>
                             <property>

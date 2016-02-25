@@ -62,7 +62,7 @@ public class Jdp {
     private static final Logger LOGGER = LoggerFactory.getLogger(Jdp.class);
     private static final ConcurrentMap<String, Boolean> doNotRegisterFor     = new ConcurrentHashMap<String, Boolean>(32);   // can be used to avoid registering injections also for java.lang.*
     private static final ConcurrentMap<String, Boolean> onlyRegisterFor      = new ConcurrentHashMap<String, Boolean>(32);   // can be used to limit subtypes to listed packages
-    
+
     static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex            = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
     static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses         = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope
     static private Map<Class<?>, JdpEntry<?>> classesOverriddenBySpecialized = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used to mark classes which are overridden
@@ -88,7 +88,7 @@ public class Jdp {
         }
         return b.toString();
     }
-    
+
     /** Superclass and interfaces are only registered if they do not start with one of the registered prefixes.
      * @param exclusion Package prefix to exclude, for example "java."
      */
@@ -203,7 +203,7 @@ public class Jdp {
     /** Destructs all objects which have been created in this thread context. */
     static public void clearThreadContext() {
     }
-    
+
     /** Returns all qualifiers for which an implemenation has been found. */
     static public <T> Set<String> getQualifiers(Class<T> type) {
         JdpTypeEntry<T> te = getType(type);
@@ -400,7 +400,7 @@ public class Jdp {
         Class<T> cls = (Class<T>) source.getClass();
         register(cls, newEntry);
     }
-    
+
     static public <T> void bindByQualifierWithFallback(Class<T> interfaceClass, String qualifier) {
         T bean = Jdp.getRequired(interfaceClass, qualifier);
         if (qualifier != null) {
@@ -560,7 +560,7 @@ public class Jdp {
                     // determine if we want the static or the dynamic variant
                     final boolean byInstance = StartupOnly.class.isAssignableFrom(cls);
                     LOGGER.info("Startup stage {}: invoking {} {}.onStartup()", se.getKey(), byInstance ? "dynamic" : "static", cls.getCanonicalName());
-                    
+
                     if (byInstance) {
                         // dynamic path
                         StartupOnly bean = null;

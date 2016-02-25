@@ -27,4 +27,3 @@ class BasicMain {
         System.out.println('''port is «x.port»''')      // named type
     }
 }
-

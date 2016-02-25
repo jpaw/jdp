@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>jdp-core</artifactId>
-    
+
     <dependencies>
         <dependency>
             <groupId>org.reflections</groupId>
