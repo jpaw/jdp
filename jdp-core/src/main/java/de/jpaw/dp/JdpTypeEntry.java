@@ -32,6 +32,13 @@ final class JdpTypeEntry<T> {
         qualifiedEntries.clear();
     }
 
+    /* remove all entries for a given qualifier */
+    final void clear(String qualifier) {
+        List<JdpEntry<? extends T>> currentEntries = qualifiedEntries.get(qualifier);
+        if (currentEntries != null)
+            currentEntries.clear();
+    }
+
     final void addEntry(JdpEntry<? extends T> additional) {
         if (additional.qualifier == null)
             unqualifiedEntries.add(additional);

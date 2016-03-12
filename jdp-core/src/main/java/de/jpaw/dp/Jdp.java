@@ -323,6 +323,13 @@ public class Jdp {
         return te == null ? null : te.getInstanceForClassname(classname, qualifier);
     }
 
+    //*************************************************************************************************************************
+    //
+    //  Dynamic binding methods
+    //
+    //
+    //*************************************************************************************************************************
+
     /** Bind source to its own class as the new goal, with a qualifier. */
     static public <T> void bindInstanceTo(T source, String qualifier) {
         bindInstanceTo(source, (Class<T>)source.getClass(), qualifier, true);
@@ -359,12 +366,17 @@ public class Jdp {
             if (e == null) {
                 typeIndex.put(type, new JdpTypeEntry<T>(newEntry));
             } else {
-                if (clearOthers)
-                    e.clear();
+                if (clearOthers) {
+                    if (qualifier != null)
+                        e.clear(qualifier);     // clear only entries for this qualifier
+                    else
+                        e.clear();              // clear all
+                }
                 e.addEntry(newEntry);
             }
         }
     }
+
     /** Bind source to the binding as primary, possibly clearing all other bindings.
      * This uses the EAGER_SINGLETON type, as the instance does already exist.
      * fluent xtend use:
