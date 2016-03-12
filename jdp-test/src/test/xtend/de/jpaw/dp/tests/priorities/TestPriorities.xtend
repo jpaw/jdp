@@ -66,4 +66,3 @@ class TestPriorities {
         Jdp.getRequired(Grey)                           // fallback and no default, and multiple candidates
     }
 }
-

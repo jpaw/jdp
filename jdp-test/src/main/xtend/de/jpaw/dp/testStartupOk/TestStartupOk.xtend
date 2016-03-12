@@ -27,6 +27,3 @@ class Main {
         Jdp.init("de.jpaw.dp.testStartupOk");
     }
 }
-
-
-

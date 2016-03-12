@@ -4,12 +4,12 @@
     <parent>
         <groupId>de.jpaw</groupId>
         <artifactId>jpaw-se-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
         <relativePath/>
     </parent>
 
     <artifactId>jdp-base</artifactId>
-    <version>0.3.0</version>
+    <version>0.3.1</version>
     <packaging>pom</packaging>
 
     <description>Common configuration settings for all JDP projects</description>
@@ -58,7 +58,7 @@
                     <configuration>
                         <!-- cannot use target/lib because we depend on additional 4rd party libraries (lz4), which are not in this project -->
                         <argLine>-Djava.library.path=${user.home}/lib</argLine>
-                    
+
                         <!-- This does not work:
                         <systemProperties>
                             <property>

@@ -71,22 +71,22 @@ class MainTestMain {
         val anyCar = getAllClassesAnyQualifier(Car)
         println('''The SUVs are «anySuv.map[simpleName].join(', ')»''')
         println('''All known cars are «anyCar.map[simpleName].join(', ')»''')
-        
+
         val defaultSuv = getRequired(Car, "SUV")
         println('''The default SUV is «defaultSuv.class.simpleName ?: "null"»''')
         if (defaultSuv.class !== GClass)
             throw new Exception("Unexpected behaviour")
-        
+
         val someUnknownCar = getRequired(Car, "Convertible")
         println('''I wanted a convertible but got a «someUnknownCar.class.simpleName ?: "null"»''')
-        
+
         val oneCarPerQualifier = getOneInstancePerQualifier(Car)
         if (oneCarPerQualifier.size != 2)
             throw new Exception("Unexpected behaviour: expected 2 cars, one SUV, one Sedan")
         for (e : oneCarPerQualifier) {
             println('''One is a «e.class.simpleName»''')
         }
-        
+
         val carMapPerQualifier = getInstanceMapPerQualifier(Car)
         if (carMapPerQualifier.size != 2)
             throw new Exception("Unexpected behaviour: expected 2 cars, one SUV, one Sedan")

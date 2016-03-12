@@ -14,7 +14,7 @@ class InjectProcessor extends AbstractFieldProcessor {
         val idx = indexOf('<')
         return if (idx >= 0) substring(0, idx) else it
     }
-    
+
     override doTransform(MutableFieldDeclaration fld, extension TransformationContext context) {
         val provider = Provider.newTypeReference.type
         val namedAnno = Named.newTypeReference.type

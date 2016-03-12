@@ -4,7 +4,7 @@
     <parent>
         <groupId>de.jpaw</groupId>
         <artifactId>jdp-base</artifactId>
-        <version>0.3.0</version>
+        <version>0.3.1</version>
         <relativePath>../jdp-base/pom.xml</relativePath>
     </parent>
 
@@ -12,7 +12,7 @@
     <packaging>pom</packaging>
 
     <description>Jdp bill of materials</description>
- 
+
     <dependencyManagement>
         <dependencies>
             <dependency>
