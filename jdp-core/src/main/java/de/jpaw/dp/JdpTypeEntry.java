@@ -64,12 +64,12 @@ final class JdpTypeEntry<T> {
     }
     String dump() {
         StringBuilder b = new StringBuilder(1000);
-        b.append("unnamed entries: ");
+        b.append("- unnamed entries: ");
         join(b, unqualifiedEntries);
         for (Map.Entry<String, List<JdpEntry<? extends T>>> e : qualifiedEntries.entrySet()) {
+            b.append(" - qualified by ");
             b.append(e.getKey());
-            b.append(':');
-            b.append(' ');
+            b.append(": ");
             join(b, e.getValue());
 
         }
