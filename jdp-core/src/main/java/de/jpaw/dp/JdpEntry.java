@@ -40,9 +40,15 @@ final public class JdpEntry<T> implements Provider<T> {
         @Override
         public T get() {
             try {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Instantiating THREAD instance of {}", cls.getCanonicalName());
+                    T instance1 = cls.newInstance();
+                    LOGGER.debug("Instantiation of THREAD instance {} done", cls.getCanonicalName());
+                    return instance1;
+                }
                 return cls.newInstance();
             } catch (Exception e) {
-                LOGGER.error("Cannot instantiate class {}", cls.getCanonicalName());
+                LOGGER.error("Cannot instantiate class {}: {}", cls.getCanonicalName(), e.getMessage());
                 return null;
             }
         }
@@ -121,11 +127,19 @@ final public class JdpEntry<T> implements Provider<T> {
                     return instance;
                 else {
                     // TODO: lock! But then be aware of deadlocks / cycles!
+                    LOGGER.debug("Instantiating SINGLETON {}", actualType.getCanonicalName());
                     instance = actualType.newInstance();
+                    LOGGER.debug("Instantiation of SINGLETON {} done", actualType.getCanonicalName());
                     return instance;
                 }
             case DEPENDENT:
                 // always return a new instance
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Instantiating DEPENDENT {}", actualType.getCanonicalName());
+                    T instance1 = actualType.newInstance();
+                    LOGGER.debug("Instantiation of DEPENDENT {} done", actualType.getCanonicalName());
+                    return instance1;
+                }
                 return actualType.newInstance();
             case PER_THREAD:
             case CUSTOM:
