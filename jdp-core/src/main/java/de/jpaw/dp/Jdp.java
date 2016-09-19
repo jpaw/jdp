@@ -2,6 +2,7 @@ package de.jpaw.dp;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,6 +67,7 @@ public class Jdp {
     static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex            = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
     static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses         = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope
     static private Map<Class<?>, JdpEntry<?>> classesOverriddenBySpecialized = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used to mark classes which are overridden
+    static public boolean registerAbstractClasses = false;  // normally, abstract classes should not be registered.
 
     // typesafe access methods
     static private <X> JdpTypeEntry<X> getType(Class<X> type) {
@@ -470,8 +472,18 @@ public class Jdp {
         }
     }
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
-     * Called internally only. The scope passed from the outside, it is used for autodetection of the classes. */
+     * Called internally only. The scope passed from the outside, it is used for autodetection of the classes.
+     * Registration is normally rejected for abstract classes. */
     private static <T> void registerInternal(Class<T> cls, Scopes scope) {
+        if (cls.isInterface()) {
+            LOGGER.debug("    not registering class {}: it's an interface!", cls.getCanonicalName());
+            return;
+        }
+        if (!registerAbstractClasses && Modifier.isAbstract(cls.getModifiers())) {
+            LOGGER.debug("    not registering class {}: it's abstract! (Set Jdp.registerAbstractClasses to true if you want that.)", cls.getCanonicalName());
+            return;
+        }
+        
         LOGGER.debug("register({})", cls.getCanonicalName());
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
@@ -494,7 +506,8 @@ public class Jdp {
     }
 
     /** Registers a class to itself and to all of its directly implemented interfaces and to its superclasses
-     * The scope passed from the outside, it is used for autodetection of the classes. */
+     * The scope passed from the outside, it is used for autodetection of the classes.
+     * Here, abstract classes are possible, because the custom provider could return a non abstract subclass of it. */
     public static <T> void registerWithCustomProvider(Class<T> cls, Provider<T> provider) {
         LOGGER.debug("register({}) CUSTOM", cls.getCanonicalName());
         Set<Class<?>> classesDone = new HashSet<Class<?>>();
