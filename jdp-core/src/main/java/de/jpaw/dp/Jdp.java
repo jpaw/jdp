@@ -215,6 +215,8 @@ public class Jdp {
     /** Returns one instance per non-null qualifier, using the usual resolution rules. */
     static public <T> List<T> getOneInstancePerQualifier(Class<T> type) {
         JdpTypeEntry<T> te = getType(type);
+        if (te == null)
+            return ImmutableList.<T>of();
         Set<String> qualifiers = te.getQualifiers();
         if (qualifiers == null || qualifiers.size() == 0)
             return ImmutableList.<T>of();
@@ -228,6 +230,8 @@ public class Jdp {
     /** Returns one instance per non-null qualifier, using the usual resolution rules. */
     static public <T> Map<String, T> getInstanceMapPerQualifier(Class<T> type) {
         JdpTypeEntry<T> te = getType(type);
+        if (te == null)
+            return ImmutableMap.<String, T>of();
         Set<String> qualifiers = te.getQualifiers();
         if (qualifiers == null || qualifiers.size() == 0)
             return ImmutableMap.<String, T>of();
