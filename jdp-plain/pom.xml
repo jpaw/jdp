@@ -9,7 +9,7 @@
         <relativePath>../jdp-base/pom.xml</relativePath>
     </parent>
 
-    <artifactId>jdp-core</artifactId>
+    <artifactId>jdp-plain</artifactId>
 
     <dependencies>
         <dependency>
@@ -18,14 +18,14 @@
             <version>${reflections.version}</version>
         </dependency>
         <dependency>
-            <groupId>de.jpaw</groupId>
-            <artifactId>jdp-plain</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.xtend</groupId>
-            <artifactId>org.eclipse.xtend.lib</artifactId>
-            <version>${xtend.version}</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
     </dependencies>
 
