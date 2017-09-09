@@ -17,7 +17,9 @@ public class ReflectionsPackageCache {
         Reflections r = scannedPackages.get(packagename);
         if (r == null) {
             r = new Reflections(packagename);
-            scannedPackages.putIfAbsent(packagename, r);
+            Reflections r2 = scannedPackages.putIfAbsent(packagename, r);
+            if (r2 != null)
+                r = r2;  // returns the initial Reflections instance, such that long term only the first instance is used
         }
         return r;
     }

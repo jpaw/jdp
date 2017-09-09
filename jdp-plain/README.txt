@@ -21,7 +21,7 @@ Scopes:
 =======
 built-in scopes:
 @Singleton / ApplicationScoped
-@Thread
+@PerThread
 @Dependent (per request / per access)
 
 
@@ -31,4 +31,4 @@ Annotations
 @Default
 
 
-Qualifiers are optional.  Named("String") can be used. Q: Can the parameter be supplied dynamically?
+Qualifiers are optional.  Named("String") can be used.
