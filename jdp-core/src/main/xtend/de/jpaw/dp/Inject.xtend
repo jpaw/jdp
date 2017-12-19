@@ -43,10 +43,10 @@ class InjectProcessor extends AbstractFieldProcessor {
                  fld.type
             }
 
-        fld.docComment = '''
-            type args are «fld.type.actualTypeArguments.map[simpleName].join(':')» !
-            simple name is «fld.simpleName», type simple name is «fld.type.simpleName»
-            type is «fld.type.type.qualifiedName»'''
+//        fld.docComment = '''
+//            type args are «fld.type.actualTypeArguments.map[simpleName].join(':')» !
+//            simple name is «fld.simpleName», type simple name is «fld.type.simpleName»
+//            type is «fld.type.type.qualifiedName»'''
         fld.initializer = if (fld.type.type == provider)
             [ '''«toJavaCode(jdpClass)».getProvider(«toJavaCode(fld.type.actualTypeArguments.get(0))».class«qualifierText»)''']
         else
