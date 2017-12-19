@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>jdp-base</artifactId>
-    <version>0.4.1</version>
+    <version>0.4.2</version>
     <packaging>pom</packaging>
 
     <description>Common configuration settings for all JDP projects</description>
