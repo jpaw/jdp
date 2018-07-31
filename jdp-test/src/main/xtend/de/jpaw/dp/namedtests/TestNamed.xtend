@@ -35,6 +35,16 @@ class Defender implements Car {
     }
 }
 
+@Named("SUV")
+@Named("Helicopter")
+@Named("Boat")
+@Singleton
+class FlyWaToot implements Car {
+    override drive(int number) {
+        println("Robbi got a really good one! " + number)
+    }
+}
+
 class MainTestMain {
     def static void main(String [] args) {
         Jdp.init("de.jpaw.dp.namedtests");
