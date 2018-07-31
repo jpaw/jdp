@@ -40,15 +40,18 @@ final class JdpTypeEntry<T> {
     }
 
     final void addEntry(JdpEntry<? extends T> additional) {
-        if (additional.qualifier == null)
+        final List<String> qualifiers = additional.qualifiers;
+        if (qualifiers == null || qualifiers.size() == 0)
             unqualifiedEntries.add(additional);
         else {
             synchronized (locker) {
-                List<JdpEntry<? extends T>> l = qualifiedEntries.get(additional.qualifier);
-                if (l == null) {
-                    qualifiedEntries.put(additional.qualifier, newListWithInitialEntry(additional));
-                } else {
-                    l.add(additional);
+                for (String qualifier: qualifiers) {
+                    List<JdpEntry<? extends T>> l = qualifiedEntries.get(qualifier);
+                    if (l == null) {
+                        qualifiedEntries.put(qualifier, newListWithInitialEntry(additional));
+                    } else {
+                        l.add(additional);
+                    }
                 }
             }
         }

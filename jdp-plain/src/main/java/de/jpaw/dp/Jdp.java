@@ -489,23 +489,11 @@ public class Jdp {
         }
         
         LOGGER.debug("register({})", cls.getCanonicalName());
-        Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, scope);
         if (allAutodetectedClasses.put(cls, newEntry) != null) {
             throw new ClassRegisteredTwiceException(cls);
         }
-//        if (classesOverriddenBySpecialized.get(cls) != null) {
-//          newEntry.setOverriddenBySpecialized();
-//        }
-        registerClassAndAllInterfaces(cls, newEntry, classesDone, false);
-        Class<? super T> parent = cls.getSuperclass();
-        while (parent != null && parent != Object.class) {
-            if (newEntry.specializes) {
-                classesOverriddenBySpecialized.put(parent, newEntry);
-            }
-            registerClassAndAllInterfaces(parent, newEntry, classesDone, false);
-            parent = parent.getSuperclass();
-        }
+        registerSub(cls, newEntry, true, true);
 //        LOGGER.info("<<< register done for class {}", cls.getCanonicalName());
     }
 
@@ -514,15 +502,22 @@ public class Jdp {
      * Here, abstract classes are possible, because the custom provider could return a non abstract subclass of it. */
     public static <T> void registerWithCustomProvider(Class<T> cls, Provider<T> provider) {
         LOGGER.debug("register({}) CUSTOM", cls.getCanonicalName());
-        Set<Class<?>> classesDone = new HashSet<Class<?>>();
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, provider);
-        registerClassAndAllInterfaces(cls, newEntry, classesDone, true);
+        registerSub(cls, newEntry, false, false);
+//      LOGGER.info("<<< register CUSTOM done for class {}", cls.getCanonicalName());
+    }
+
+    private static <T> void registerSub(Class<T> cls, JdpEntry<T> newEntry, boolean skipCheck, boolean withSpecializes) { 
+        Set<Class<?>> classesDone = new HashSet<Class<?>>();
+        registerClassAndAllInterfaces(cls, newEntry, classesDone, skipCheck);
         Class<? super T> parent = cls.getSuperclass();
         while (parent != null && parent != Object.class) {
+            if (withSpecializes && newEntry.specializes) {
+                classesOverriddenBySpecialized.put(parent, newEntry);
+            }
             registerClassAndAllInterfaces(parent, newEntry, classesDone, false);
             parent = parent.getSuperclass();
         }
-//        LOGGER.info("<<< register CUSTOM done for class {}", cls.getCanonicalName());
     }
 
     static private void initsub(Reflections reflections, Class<? extends Annotation> annotationClass, Scopes scope) {

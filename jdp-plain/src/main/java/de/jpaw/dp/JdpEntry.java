@@ -1,5 +1,9 @@
 package de.jpaw.dp;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +24,7 @@ import de.jpaw.dp.exceptions.CannotCreateProviderException;
  */
 final public class JdpEntry<T> implements Provider<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdpEntry.class);
-    public final String qualifier;      // the qualifier - either provided with the constructor or autodetected from @Named annotation
+    protected final List<String> qualifiers;   // the qualifier - either provided with the constructor or autodetected from @Named annotation
     public final boolean isAlternative; // autodetected, if @Alternative annotation is set, the entry won't be used unless explicitly requested by config files or bind requests
     public final boolean isDefault;     // autodetected, if the @Default annotation is set, the entry will be choosen amount others with higher priority
     public final boolean isAny;         // autodetected, if the @Any     annotation is set and this entry has no qualifier, the entry will be choosen for other qualifiers as well
@@ -64,7 +68,7 @@ final public class JdpEntry<T> implements Provider<T> {
     JdpEntry(T providedInstance, String qualifier) {
         this.myScope = Scopes.EAGER_SINGLETON;
         this.actualType = (Class<T>) providedInstance.getClass();
-        this.qualifier = qualifier;
+        this.qualifiers = new ArrayList<String>(1);
         this.instance = providedInstance;
         this.customScope = null;
         this.isAlternative = false;
@@ -72,6 +76,8 @@ final public class JdpEntry<T> implements Provider<T> {
         this.isAny = false;
         this.isFallback = false;
         this.specializes = false;
+        if (qualifier != null && qualifier.length() > 0)
+            qualifiers.add(qualifier);
     }
 
 
@@ -86,12 +92,21 @@ final public class JdpEntry<T> implements Provider<T> {
         }
     }
 
+    private final List<String> getQualifiers(final Class<T> actualType) {
+        final Named [] annotations = actualType.getAnnotationsByType(Named.class);
+        if (annotations.length == 0)
+            return Collections.emptyList();
+        final List<String> names = new ArrayList<String>(annotations.length);
+        for (Named anno : annotations)
+            names.add(anno.value());
+        return names;
+    }
+
     /** create a new entry from an autodetected class. This can be any scope, the qualifier is read from annotations. */
-    public JdpEntry(Class<T> actualType, Scopes myScope) {
+    JdpEntry(Class<T> actualType, Scopes myScope) {
         this.myScope        = myScope;
         this.actualType     = actualType;
-        Named anno          = actualType.getAnnotation(Named.class);
-        this.qualifier      = (anno == null ? null : anno.value());
+        this.qualifiers     = getQualifiers(actualType);
         this.isAlternative  = actualType.getAnnotation(Alternative.class) != null;
         this.isAny          = actualType.getAnnotation(Any.class) != null;
         this.isDefault      = actualType.getAnnotation(Default.class) != null;
@@ -103,11 +118,10 @@ final public class JdpEntry<T> implements Provider<T> {
     }
 
     /** create a new entry for a manual assignment. */
-    public JdpEntry(Class<T> actualType, Provider<T> customProvider) {
+    JdpEntry(Class<T> actualType, Provider<T> customProvider) {
         this.myScope        = Scopes.CUSTOM;
         this.actualType     = actualType;
-        Named anno          = actualType.getAnnotation(Named.class);
-        this.qualifier      = (anno == null ? null : anno.value());
+        this.qualifiers     = getQualifiers(actualType);
         this.isAlternative  = actualType.getAnnotation(Alternative.class) != null;
         this.isAny          = actualType.getAnnotation(Any.class) != null;
         this.isDefault      = actualType.getAnnotation(Default.class) != null;
@@ -146,8 +160,8 @@ final public class JdpEntry<T> implements Provider<T> {
                 return customScope.get();
             }
         } catch (Exception e) {
-            LOGGER.error("Exception retrieving instance of {} with qualifier {}  of scope {}: {}: {}",
-                        actualType.getCanonicalName(), qualifier, myScope.name(), e.getClass().getSimpleName(), e.getMessage());
+            LOGGER.error("Exception retrieving instance of {} of scope {}: {}: {}",
+                        actualType.getCanonicalName(), myScope.name(), e.getClass().getSimpleName(), e.getMessage());
             LOGGER.error("Stack trace of cause is:", e);
             return null;
         }
