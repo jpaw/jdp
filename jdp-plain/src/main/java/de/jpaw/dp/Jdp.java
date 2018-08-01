@@ -493,7 +493,7 @@ public class Jdp {
         if (allAutodetectedClasses.put(cls, newEntry) != null) {
             throw new ClassRegisteredTwiceException(cls);
         }
-        registerSub(cls, newEntry, true, true);
+        registerSub(cls, newEntry, false, true);
 //        LOGGER.info("<<< register done for class {}", cls.getCanonicalName());
     }
 
@@ -503,7 +503,7 @@ public class Jdp {
     public static <T> void registerWithCustomProvider(Class<T> cls, Provider<T> provider) {
         LOGGER.debug("register({}) CUSTOM", cls.getCanonicalName());
         JdpEntry<T> newEntry = new JdpEntry<T>(cls, provider);
-        registerSub(cls, newEntry, false, false);
+        registerSub(cls, newEntry, true, false);
 //      LOGGER.info("<<< register CUSTOM done for class {}", cls.getCanonicalName());
     }
 
