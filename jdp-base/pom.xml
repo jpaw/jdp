@@ -4,12 +4,12 @@
     <parent>
         <groupId>de.jpaw</groupId>
         <artifactId>jpaw-se-parent</artifactId>
-        <version>1.5.0</version>
+        <version>1.5.2</version>
         <relativePath/>
     </parent>
 
     <artifactId>jdp-base</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
     <packaging>pom</packaging>
 
     <description>Common configuration settings for all JDP projects</description>
