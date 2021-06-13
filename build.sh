@@ -9,4 +9,4 @@ echo "Cleaning repo folder..."
 git clean -fdx
 
 echo "executing mvn $GOAL..."
-(cd jdp-base && mvn $GOAL)
+mvn $GOAL

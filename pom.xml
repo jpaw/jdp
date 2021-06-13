@@ -4,7 +4,7 @@
     <parent>
         <groupId>de.jpaw</groupId>
         <artifactId>jpaw-se-parent</artifactId>
-        <version>1.7.1</version>
+        <version>1.8.0</version>
         <relativePath/>
     </parent>
 
@@ -156,11 +156,11 @@
     </reporting>
 
     <modules>
-        <module>../jdp-bom/pom.xml</module>
-        <module>../jdp-plain/pom.xml</module>
-        <module>../jdp-core/pom.xml</module>
-        <module>../jdp-test/pom.xml</module>
-        <module>../jdp-benchmarks/pom.xml</module>
+        <module>jdp-bom/pom.xml</module>
+        <module>jdp-plain/pom.xml</module>
+        <module>jdp-core/pom.xml</module>
+        <module>jdp-test/pom.xml</module>
+        <module>jdp-benchmarks/pom.xml</module>
     </modules>
 
 </project>
