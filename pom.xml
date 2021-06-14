@@ -157,7 +157,6 @@
 
     <modules>
         <module>jdp-bom/pom.xml</module>
-        <module>jdp-plain/pom.xml</module>
         <module>jdp-core/pom.xml</module>
         <module>jdp-test/pom.xml</module>
         <module>jdp-benchmarks/pom.xml</module>

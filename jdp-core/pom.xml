@@ -18,13 +18,12 @@
             <version>${reflections.version}</version>
         </dependency>
         <dependency>
-            <groupId>de.jpaw</groupId>
-            <artifactId>jdp-plain</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.xtend</groupId>
             <artifactId>org.eclipse.xtend.lib</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
     </dependencies>
 
@@ -72,7 +71,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>de.jpaw.jdp.core</Automatic-Module-Name>
+                            <Automatic-Module-Name>de.jpaw.jdp</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

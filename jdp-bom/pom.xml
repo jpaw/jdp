@@ -17,11 +17,6 @@
         <dependencies>
             <dependency>
                 <groupId>de.jpaw</groupId>
-                <artifactId>jdp-plain</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>de.jpaw</groupId>
                 <artifactId>jdp-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
