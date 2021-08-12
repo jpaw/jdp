@@ -1,6 +1,6 @@
 package de.jpaw.jdp.benchmarks.weld;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class WeldException implements MySingletonExceptionInterface {

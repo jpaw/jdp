@@ -4,8 +4,7 @@
     <parent>
         <groupId>de.jpaw</groupId>
         <artifactId>jdp-base</artifactId>
-        <version>1.5.0</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>1.6.0</version>
     </parent>
 
     <artifactId>jdp-bom</artifactId>

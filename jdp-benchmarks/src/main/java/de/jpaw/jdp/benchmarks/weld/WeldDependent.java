@@ -1,6 +1,6 @@
 package de.jpaw.jdp.benchmarks.weld;
 
-import javax.enterprise.context.Dependent;
+import jakarta.enterprise.context.Dependent;
 
 @Dependent
 public class WeldDependent implements MyDependentInterface {
