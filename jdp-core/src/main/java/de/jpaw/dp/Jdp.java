@@ -64,13 +64,13 @@ public class Jdp {
     private static final ConcurrentMap<String, Boolean> doNotRegisterFor     = new ConcurrentHashMap<String, Boolean>(32);   // can be used to avoid registering injections also for java.lang.*
     private static final ConcurrentMap<String, Boolean> onlyRegisterFor      = new ConcurrentHashMap<String, Boolean>(32);   // can be used to limit subtypes to listed packages
 
-    static private final Map<Class<?>, JdpTypeEntry<?>> typeIndex            = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
-    static private Map<Class<?>, JdpEntry<?>> allAutodetectedClasses         = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope
-    static private Map<Class<?>, JdpEntry<?>> classesOverriddenBySpecialized = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used to mark classes which are overridden
+    private static final Map<Class<?>, JdpTypeEntry<?>> typeIndex            = new ConcurrentHashMap<Class<?>, JdpTypeEntry<?>>(1000);
+    private static Map<Class<?>, JdpEntry<?>> allAutodetectedClasses         = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used for determining the scope
+    private static Map<Class<?>, JdpEntry<?>> classesOverriddenBySpecialized = new ConcurrentHashMap<Class<?>, JdpEntry<?>>(1000);  // used to mark classes which are overridden
     static public boolean registerAbstractClasses = false;  // normally, abstract classes should not be registered.
 
     // typesafe access methods
-    static private <X> JdpTypeEntry<X> getType(Class<X> type) {
+    private static <X> JdpTypeEntry<X> getType(Class<X> type) {
         return (JdpTypeEntry<X>) typeIndex.get(type);
     }
 
@@ -235,7 +235,7 @@ public class Jdp {
         Set<String> qualifiers = te.getQualifiers();
         if (qualifiers == null || qualifiers.size() == 0)
             return ImmutableMap.<String, T>of();
-        Map<String, T> map = new HashMap<String, T>(qualifiers.size() * 2);
+        Map<String, T> map = new HashMap<String, T>(qualifiers.size());
         for (String qualifier : qualifiers) {
             map.put(qualifier, getRequired(type, qualifier));
         }
@@ -366,7 +366,7 @@ public class Jdp {
 
 
     /** internal subroutine: register an existing entry for a type. */
-    static private <T> void bindEntryTo(JdpEntry<T> newEntry, Class<T> type, String qualifier, boolean clearOthers) {
+    private static <T> void bindEntryTo(JdpEntry<T> newEntry, Class<T> type, String qualifier, boolean clearOthers) {
         synchronized (typeIndex) {
             JdpTypeEntry<? super T> e = getType(type);
             if (e == null) {
@@ -388,7 +388,7 @@ public class Jdp {
      * fluent xtend use:
      * Mega k = new Mega();
      * k.bindInstanceTo("Mega", null, true);   */
-    static private <T> void bindInstanceTo(T source, Class<T> type, String qualifier, boolean clearOthers) {
+    private static <T> void bindInstanceTo(T source, Class<T> type, String qualifier, boolean clearOthers) {
         JdpEntry<T> newEntry = new JdpEntry<T>(source, qualifier);
         bindEntryTo(newEntry, type, qualifier, clearOthers);
     }
@@ -520,7 +520,7 @@ public class Jdp {
         }
     }
 
-    static private void initsub(Reflections reflections, Class<? extends Annotation> annotationClass, Scopes scope) {
+    private static void initsub(Reflections reflections, Class<? extends Annotation> annotationClass, Scopes scope) {
         Set<Class<?>> instances = reflections.getTypesAnnotatedWith(annotationClass);
         LOGGER.info("Found {} {}", instances.size(), annotationClass.getSimpleName());
 
@@ -548,8 +548,8 @@ public class Jdp {
         }
     }
 
-    static private final List<StartupShutdown> lifecycleBeans = new ArrayList<StartupShutdown>(40);
-    static private final Set<Class<?>> lifecycleBeanSkips = new HashSet<Class<?>>(40);
+    private static final List<StartupShutdown> lifecycleBeans = new ArrayList<StartupShutdown>(40);
+    private static final Set<Class<?>> lifecycleBeanSkips = new HashSet<Class<?>>(40);
 
     static public void runStartups(String prefix) {
         LOGGER.info("Jdp startup phase for {} begins", prefix);
